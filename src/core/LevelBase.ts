@@ -1,13 +1,13 @@
-import {Engine, Scene,ArcRotateCamera, HemisphericLight, Vector3} from "babylonjs";
+import { Engine, Scene, ArcRotateCamera, HemisphericLight, Vector3 } from "babylonjs";
 import { ActorManager } from "../managers/actorManager";
 
-export class LevelBase{
-    public scene:Scene;
-    public actorManager:ActorManager;
-    private camera!:ArcRotateCamera;
-    private light!:HemisphericLight;
+export class LevelBase {
+    public scene: Scene;
+    public actorManager: ActorManager;
+    protected camera!: ArcRotateCamera;
+    protected light!: HemisphericLight;
 
-    constructor(engine:Engine) {
+    constructor(engine: Engine) {
         this.scene = new Scene(engine);
         this.actorManager = new ActorManager(this.scene);
         this.SetupCamera();
@@ -16,35 +16,35 @@ export class LevelBase{
         //EngineManager.getInstance().scene = this.scene;
     }
 
-    protected SetupScene(){
+    protected SetupScene() {
 
     }
 
-    private SetupCamera(){
+    private SetupCamera() {
         this.camera = new ArcRotateCamera(
             'MainCamera',
-            Math.PI/2,
-            Math.PI/3,
+            Math.PI / 2,
+            Math.PI / 3,
             6,
             Vector3.Zero(),
             this.scene
         )
-        this.camera.attachControl(true,true);        
+        this.camera.attachControl(true, true);
     }
-    private SetupLights(){
+    private SetupLights() {
         this.light = new HemisphericLight("DefaultSkyLight",
             Vector3.Up(),
             this.scene
         )
     }
 
-    public Update(dt:number){
+    public Update(dt: number) {
         this.actorManager.UpdateAllActors(dt)
     }
-    public InspectorShow(){
+    public InspectorShow() {
         this.scene.debugLayer.show();
     }
-    public InspectorHide(){
+    public InspectorHide() {
         this.scene.debugLayer.hide();
     }
 }
