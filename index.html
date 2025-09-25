@@ -11,13 +11,20 @@
 
 <body>
   <script type="module" src="/src/main.ts"></script>
-  <canvas id="renderCanvas"></canvas>
+  <canvas id="renderCanvas" class="viewport"></canvas>
+  <script type="module" src="/src/core/imageViewer.ts"></script> 
+  <div id="container"></div>
+      <canvas id="imageCanvas" ></canvas>
+  </div>
+
+
+
 
   <div id="app">
     <!-- Top Bar -->
     <div class="top-bar">
       <div class="logo">
-        <img src="assets/Logo.png" alt="" class="logo-img">
+        <img src="src/assets/Logo.png" alt="" class="logo-img">
         Burj Nawas
       </div>
       <div class="time-toggle">
