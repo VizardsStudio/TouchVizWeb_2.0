@@ -16,5 +16,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* copy canvas CSS if needed */
+#renderCanvas{
+  position: absolute;
+}
 </style>

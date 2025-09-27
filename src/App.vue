@@ -1,6 +1,6 @@
 <template>
     <!-- 3D + Image Canvases -->
-    <!-- <BabylonViewport /> -->
+    <BabylonViewport />
     <ImageViewerCanvas ref="imageViewerRef" />
 
     <!-- UI Components -->
