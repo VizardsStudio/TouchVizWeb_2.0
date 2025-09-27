@@ -37,9 +37,9 @@ function onResize() {
 onMounted(() => {
   if (!imageCanvas.value) return;
   // init
-  initImageViewer(imageCanvas.value, 90);
+  initImageViewer(imageCanvas.value, 100);
   //play initial animation
-  animateFrames(90,150,3000,-1,0.25,0.25)
+  animateFrames(100,150,1000,1,0.5,0.5)
 
   // listen for host resize
   window.addEventListener('resize', onResize);
@@ -52,13 +52,11 @@ onBeforeUnmount(() => {
 
 // Vue-layer pointer handlers simply forward the event to the core
 function onPointerDown(e: PointerEvent) {
-  console.log("pointer down")
   handlePointerDown(e);
 }
 
 function onPointerMove(e: PointerEvent) {
   handlePointerMove(e);
-  console.log("pointer moving")
 }
 
 function onPointerUp(e: PointerEvent) {
