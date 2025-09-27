@@ -1,4 +1,6 @@
-html, body {
+html,
+body,
+#App {
   margin: 0;
   padding: 0;
   width: 100%;
@@ -8,30 +10,32 @@ html, body {
   background: #111;
   color: #fff;
 }
+
 .viewport {
-  display: block;      /* remove default inline-block spacing */
+  display: block;
+  /* remove default inline-block spacing */
   width: 100%;
   height: 100%;
 }
 
 #container {
-    display: block;
-    justify-content: center;
-    object-fit: scale-down;
-    align-items: center;
-    overflow: hidden;
-    background-color: #000;
+  display: block;
+  justify-content: center;
+  object-fit: scale-down;
+  align-items: center;
+  overflow: hidden;
+  background-color: #000;
 }
 
 #imageCanvas {
-    aspect-ratio: 1 / 1;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    
-    width: 100%;
-    height: auto;
+  aspect-ratio: 1 / 1;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  width: 100%;
+  height: auto;
 }
 
 /*new UI*/
@@ -50,7 +54,6 @@ html, body {
 }
 
 canvas {
-  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
@@ -67,7 +70,6 @@ canvas {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  pointer-events: none;
 }
 
 /* ====== Top Bar ====== */
@@ -153,51 +155,6 @@ canvas {
   color: #000;
 }
 
-/* ====== Filtering Panel ====== */
-.filter-panel {
-  position: absolute;
-  bottom: 6rem;
-  left: 50%;
-  transform: translateX(-50%) translateY(20px);
-  width: 90%;
-  max-width: 480px;
-  background: rgba(0, 0, 0, 0.85);
-  padding: 1.5rem;
-  border-radius: 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(10px);
-  opacity: 0;
-  pointer-events: none;
-  transition: 0.3s ease, transform 0.3s ease;
-}
-
-.filter-panel.active {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateX(-50%) translateY(0);
-}
-
-.filter-group {
-  margin-bottom: 1.2rem;
-}
-
-.filter-group label {
-  display: block;
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
-}
-
-.range-values {
-  font-size: 0.8rem;
-  display: flex;
-  justify-content: space-between;
-  margin-top: 0.3rem;
-}
-
-input[type=range] {
-  width: 100%;
-  pointer-events: auto;
-}
 
 /* ====== Unit Selection Widget ====== */
 .unit-widget {
