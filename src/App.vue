@@ -42,7 +42,7 @@ import MapViewer from './components/mapViewer.vue'
 const time = ref<'day' | 'night'>('day')
 const activeTab = ref('home')
 const show2dViewport = ref(true)
-const show3dViewport = ref(false)
+const show3dViewport = ref(true)
 const filtering = ref(false)
 const showPdf = ref(false)
 const showTime = ref(true)

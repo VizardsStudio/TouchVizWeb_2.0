@@ -35,6 +35,7 @@ function onResize() {
 }
 
 onMounted(() => {
+  return //temporarily disabled to work on other features
   if (!imageCanvas.value) return;
   // init
   initImageViewer(imageCanvas.value, 100);
