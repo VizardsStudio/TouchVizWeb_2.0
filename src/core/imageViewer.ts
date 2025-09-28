@@ -27,7 +27,7 @@ const MAX_CONCURRENT_DECODE = 3;
 let decodeQueue: Promise<any>[] = [];
 
 // base path for frames — change if needed
-let basePath = 'src/assets/Orbits/Exterior/Day';
+let basePath = 'assets/Orbits/Exterior/Day';
 function frameUrl(i: number) {
     const idx = String(i).padStart(4, '0');
     return `${basePath}/Exterior360_2.${idx}.jpeg`;
@@ -135,7 +135,9 @@ export async function animateFrames(
         }
 
         const frameIndex = Math.floor(easedProgress * (totalFramesToAnimate - 1));
-        targetFrame = framesToLoad[frameIndex];
+        if (framesToLoad[frameIndex] !== undefined) {
+            targetFrame = framesToLoad[frameIndex];
+        }
 
         const img = cache.get(targetFrame);
         if (img) drawImageCover(img);
