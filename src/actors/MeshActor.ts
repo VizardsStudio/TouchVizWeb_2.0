@@ -15,7 +15,7 @@ export class MeshActor extends Actor {
 
     /** Add a mesh to this actor */
     public AddMesh(mesh: Mesh) {
-        mesh.parent = this.actorRoot;
+        mesh.setParent(this.actorRoot, true)
         this.meshes.push(mesh);
         if (this._defaultMesh) {
             this.RemoveMesh(this._defaultMesh)

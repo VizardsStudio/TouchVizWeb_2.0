@@ -41,8 +41,8 @@ export class LevelBase {
     public Update(dt: number) {
         this.actorManager.UpdateAllActors(dt)
     }
-    public InspectorShow() {
-        this.scene.debugLayer.show();
+    public InspectorShow(embed: boolean) {
+        this.scene.debugLayer.show({ embedMode: embed });
     }
     public InspectorHide() {
         this.scene.debugLayer.hide();
