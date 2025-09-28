@@ -1,6 +1,6 @@
 <template>
     <!-- 3D + Image Canvases -->
-    <BabylonViewport v-show="show3dViewport" />
+    <BabylonViewport v-show="show3dViewport" ref="babylonCanvas" />
     <ImageViewerCanvas v-show="show2dViewport" ref="imageViewerRef" />
     <Transition name="fade">
       <PdfViewer pdfUrl="assets/detail.pdf" v-show="showPdf"/>
@@ -18,15 +18,23 @@
       v-model:bedMax="bedMax"
     />
     <UnitWidget v-if="unitSelected" :unit="unit" :unitSelected="unitSelected" @close="unitSelected = false" />
-    <BottomNav
+    <BottomNav ref="bottomNav"
       :activeTab="activeTab"
       @update:activeTab="activeTab = $event"
       @toggleFilter="toggleFilter"
     />
+    <Transition name="fade">
+      <PopupPromp
+      :visible="showInitUnit"
+      :message="welcomeMessage"
+      @yes="onConfirm"
+      @no="onCancel"
+    />
+    </Transition>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import BabylonViewport from './components/BabylonViewport.vue'
 import ImageViewerCanvas from './components/ImageViewerCanvas.vue'
 import pdfViewer from './components/pdfViewer.vue'  
@@ -37,6 +45,8 @@ import BottomNav from './components/BottomNav.vue'
 import "./style.css"
 import PdfViewer from './components/pdfViewer.vue'
 import MapViewer from './components/mapViewer.vue'
+import PopupPromp from './components/PopupPromp.vue'
+
 
 // ===== State =====
 const time = ref<'day' | 'night'>('day')
@@ -50,7 +60,16 @@ const showMap = ref(false)
 const unitSelected = ref(false)
 const unit = ref({ name: 'A-302', area: 125, floor: 12, bedrooms: 3 })
 const imageViewerRef = ref<InstanceType<typeof ImageViewerCanvas> | null>(null)
+const babylonCanvas = ref<InstanceType<typeof BabylonViewport> | null>(null)
+const bottomNav = ref<InstanceType<typeof BottomNav> | null>(null)
 
+//url queries
+const urlQueryName = ref("")
+const urlQueryID = ref(-1)
+const showInitUnit = ref(false)
+const welcomeMessage = computed(() => `Welcome dear ${urlQueryName.value}, would you like to see your apartment?`)
+
+//filtering input
 const areaMin = ref(80)
 const areaMax = ref(250)
 const floorMin = ref(1)
@@ -80,6 +99,42 @@ function toggleTime(newTime: 'day' | 'night') {
     imageViewerRef.value?.ChangeImageSequence('assets/Orbits/Exterior/Day')
   }
 }
+
+function GetUrlQuery(){
+  const query = new URLSearchParams(window.location.search)
+
+  // Example: ?tab=filter&unit=A-302
+  const iDParam = query.get('ID')
+  const nameParam = query.get('Name')
+
+  if (nameParam) {
+    //set the name here
+    urlQueryName.value = nameParam
+  }
+  if (iDParam) {
+    urlQueryID.value = Number(iDParam)
+  }
+
+  console.log("Name: "+urlQueryName.value+"_ID: "+urlQueryID.value)
+  if (urlQueryID.value!==-1) {
+    showInitUnit.value = true
+  }
+}
+
+function onConfirm() {
+  console.log("User clicked YES")
+  showInitUnit.value = false
+  bottomNav.value?.ActivateFiltering()
+  activeTab.value = "filter"
+  babylonCanvas.value?.OpenExteriorLevel();
+  show3dViewport.value=true
+}
+
+function onCancel() {
+  console.log("User clicked NO")
+  showInitUnit.value = false
+}
+
 watch(activeTab, (newTab, oldTab) => {
   switch (newTab) {
     case 'details':
@@ -99,6 +154,8 @@ watch(activeTab, (newTab, oldTab) => {
       show3dViewport.value = false
       break
     case 'filter':
+      //open exterior level
+      babylonCanvas.value?.OpenExteriorLevel();
       showPdf.value = false
       filtering.value = true
       showTime.value = false
@@ -126,9 +183,7 @@ watch(activeTab, (newTab, oldTab) => {
 
 // ===== Lifecycle =====
 onMounted(() => {
-  // demo: show unit widget after 3s
-  setTimeout(() => (unitSelected.value = false), 3000)
-  
+  GetUrlQuery()  
 })
 </script>
 

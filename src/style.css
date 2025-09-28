@@ -186,6 +186,17 @@ body,
   font-weight: bold;
 }
 
+.popup-btn {
+  margin-top: 1rem;
+  width: 100%;
+  padding: 0.5rem;
+  border: none;
+  border-radius: 10px;
+  background: var(--theme-color);
+  cursor: pointer;
+  font-weight: bold;
+}
+
 /* ====== Responsive adjustments ====== */
 @media (max-width: 600px) {
   .filter-panel {

@@ -10,6 +10,12 @@
 <script setup lang="ts">
 import { defineProps, defineEmits } from 'vue'
 
+function ActivateFiltering(){
+  emit('update:activeTab','filter')
+}
+
+defineExpose({ActivateFiltering})
+
 defineProps<{ activeTab: string }>()
 const emit = defineEmits<{
   (e: 'update:activeTab', value: string): void

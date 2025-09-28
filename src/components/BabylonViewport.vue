@@ -7,8 +7,11 @@ import { onMounted, ref } from 'vue'
 import { EngineManager } from '../core/EngineManager'
 import { LevelExterior } from '../levels/exterior'
 
+const renderCanvas = ref<HTMLCanvasElement | null>(null)
+let engineManager:EngineManager | null = null
+let exteriorLevel:LevelExterior | null = null
+
 onMounted(() => {
-  const renderCanvas = ref<HTMLCanvasElement | null>(null)
   if (!renderCanvas.value) return
 
   // Force canvas to take full size of parent
@@ -16,12 +19,20 @@ onMounted(() => {
   renderCanvas.value.height = renderCanvas.value.clientHeight
 
   //initializing the 3d Engine
-  const engineManager = EngineManager.getInstance(renderCanvas.value)
-  const exteriorLevel = new LevelExterior(engineManager.engine)
-  engineManager.OpenLevel(exteriorLevel)
+  engineManager = EngineManager.getInstance(renderCanvas.value)
   engineManager.engine.resize()
-
 })
+
+function OpenExteriorLevel(){
+  console.log("the function is being called!!!")
+  if(!engineManager) return
+  exteriorLevel = new LevelExterior(engineManager.engine)
+  engineManager.OpenLevel(exteriorLevel)
+}
+
+//expose methods
+defineExpose({OpenExteriorLevel})
+
 </script>
 
 <style >
