@@ -7,6 +7,7 @@ export class Actor{
         this.name = name;
         this.actorRoot = new TransformNode(name,scene);
         this.actorRoot.setAbsolutePosition(position);
+        this.Start();
     }
     public Update(dt:number){
 

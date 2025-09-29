@@ -5,18 +5,21 @@ import { UnitActor, type UnitType } from "../actors/UnitActor";
 import { Actor } from "../actors/actor";
 import { GLTFFileLoader } from "babylonjs-loaders"
 import { EngineManager } from "../core/EngineManager";
+import { SelectionManager } from "../managers/SelectionManager";
+
 
 export class LevelExterior extends LevelBase 
 {
+    public selectionManager:SelectionManager;
     constructor(engine: Engine) 
     {
         super(engine);
+        this.selectionManager = new SelectionManager(this.scene, this.actorManager);
     }
 
     protected SetupScene() 
     {
         //this.InspectorShow(false);
-
         //load units and spawn unit actors
         SceneLoader.ImportMeshAsync("", "assets/gltf/exterior/", "Units.glb", this.scene)
             .then(result => 
@@ -49,24 +52,6 @@ export class LevelExterior extends LevelBase
             actor.SetId(0);
         });
     }
-    
-
-    // public CreateAnimatedMaterial(name:string, color:Color3):StandardMaterial{
-    //     const material = new StandardMaterial(name, this.scene);
-    //     material.diffuseColor = color;
-    //     material.alpha = 0.8;
-    //     material.alphaMode = Constants.ALPHA_ADD;
-    //     const alphaAnimation = new Animation("alphaPulse","alpha",30,Animation.ANIMATIONTYPE_FLOAT,Animation.ANIMATIONLOOPMODE_CYCLE);
-    //     const keys = [
-    //         {frame:0, value:0.8},
-    //         {frame:30, value:0.2},
-    //         {frame:60, value:0.8}
-    //     ];
-    //     alphaAnimation.setKeys(keys);
-    //     material.animations = [alphaAnimation];
-    //     this.scene.beginAnimation(material, 0, 60,true);
-    //     return material;
-    // }
     
 
 }

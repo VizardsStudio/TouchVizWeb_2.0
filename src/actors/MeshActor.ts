@@ -54,8 +54,24 @@ export class MeshActor extends Actor {
         });
     }
 
+    public SetPickable(isPickable:boolean)
+    {
+        this.meshes.forEach(mesh =>{
+            try {
+                if(!mesh) return;
+                mesh.isPickable = isPickable;
+            } catch (e) {
+                //ignore
+            }
+        });
+    }
 
     /** Example update */
     public Update(dt: number) {
+        super.Update(dt);
+    }
+    
+    public Start(): void {
+        super.Start();
     }
 }

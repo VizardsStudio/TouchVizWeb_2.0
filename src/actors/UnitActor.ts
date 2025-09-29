@@ -119,4 +119,10 @@ export class UnitActor extends MeshActor {
     super.Update(dt);
     // You could animate based on unit status, etc.
   }
+  public Start(): void {
+    super.Start();
+  }
+  public SetMeshes(newMeshes: Mesh[]): void {
+    this.SetPickable(true);
+  }
 }
