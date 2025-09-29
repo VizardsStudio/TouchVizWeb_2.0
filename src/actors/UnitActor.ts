@@ -1,4 +1,4 @@
-import { Scene, Vector3, Mesh, Space,Animation, StandardMaterial, Color3, Constants } from "babylonjs";
+import { Scene, Vector3, Mesh, Space,Animation, StandardMaterial, Color3, Constants,HighlightLayer } from "babylonjs";
 import { MeshActor } from "./MeshActor";
 
 export type UnitStatus = "available" | "sold" | "reserved";
@@ -26,6 +26,7 @@ export class UnitActor extends MeshActor {
     public view: UnitView;
     public numberOfBedrooms: number;
     public price: number;
+    private highlightLayer:HighlightLayer;
 
   constructor(
     name: string,
@@ -42,6 +43,7 @@ export class UnitActor extends MeshActor {
     this.typology = options.typology ?? "";
     this.view = options.view ?? "city";
     this.numberOfBedrooms = options.numberOfBedrooms ?? 1;
+    this.highlightLayer = new HighlightLayer("hl1",this.actorRoot._scene);
   }
 
     public matAvailable:StandardMaterial = this.CreateAnimatedMaterial("Available", Color3.Blue());;
@@ -112,6 +114,14 @@ export class UnitActor extends MeshActor {
   /** Optional: Useful helper for displaying unit info */
   public GetInfo(): string {
     return `${this.typology} - ${this.area} m² - ${this.numberOfBedrooms} BR - Floor ${this.floor} - ${this.view} view`;
+  }
+
+  public SetHighlight(active: boolean) {
+    if (active) {
+        this.meshes.forEach(m => this.highlightLayer.addMesh(m, Color3.White()));
+    } else {
+        this.meshes.forEach(m => this.highlightLayer.removeMesh(m));
+    }
   }
 
   /** Override update if you want special behavior */
