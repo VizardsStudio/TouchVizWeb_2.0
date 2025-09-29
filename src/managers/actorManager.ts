@@ -7,16 +7,21 @@ export class ActorManager{
     constructor(scene:Scene){
         this._scene = scene;
     }
+
+    
     public SpawnActor<T extends Actor>(
-        ActorClass: new (name:string, position:Vector3, scene:Scene) => T,
-        name:string,
-         position:Vector3
-        ):T{
-        let newActor = new ActorClass(name,position,this._scene);
-        newActor.Start();
-        this.actors.push(newActor);
-        return newActor;
+    ActorClass: new (name:string, position:Vector3, scene:Scene) => T,
+    name:string,
+    position:Vector3
+    ): T {
+    console.log("Spawning actor:", name);
+    let newActor = new ActorClass(name, position, this._scene);
+    newActor.Start();
+    this.actors.push(newActor);
+    console.log("Total actors:", this.actors.length);
+    return newActor;
     }
+
 
     public KillActor(actor:Actor){
         actor.actorRoot.dispose();

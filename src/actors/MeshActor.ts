@@ -1,5 +1,5 @@
 import { Actor } from "./actor";
-import { Scene, Vector3, Mesh, AbstractMesh, MeshBuilder } from "babylonjs";
+import { Scene, Vector3, Mesh, AbstractMesh, MeshBuilder, Material } from "babylonjs";
 
 export class MeshActor extends Actor {
     public meshes: Mesh[] = [];
@@ -41,6 +41,19 @@ export class MeshActor extends Actor {
             this.meshes.push(m);
         });
     }
+
+    public SetMaterial(material: Material) 
+    {
+        this.meshes.forEach(mesh => {
+            try {
+                if (!mesh) return; // skip undefined
+                mesh.material = material;
+            } catch (e) {
+                console.warn(`Failed to set material on mesh '${mesh?.name}':`, e);
+            }
+        });
+    }
+
 
     /** Example update */
     public Update(dt: number) {
