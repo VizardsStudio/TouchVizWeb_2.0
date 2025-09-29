@@ -44,6 +44,7 @@ export class UnitActor extends MeshActor {
     this.view = options.view ?? "city";
     this.numberOfBedrooms = options.numberOfBedrooms ?? 1;
     this.highlightLayer = new HighlightLayer("hl1",this.actorRoot._scene);
+
   }
 
     public matAvailable:StandardMaterial = this.CreateAnimatedMaterial("Available", Color3.Blue());;
