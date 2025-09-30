@@ -1,0 +1,1 @@
+public/assets/gltf/exterior/3dModels/*.glb filter=lfs diff=lfs merge=lfs -text
