@@ -1,6 +1,8 @@
 import { type Mesh, type Scene} from "babylonjs";
 import { UnitActor } from "../actors/UnitActor";
 import type { ActorManager } from "./actorManager";
+import type { ApartmentProperties } from "../types/apartment";
+import { eventBus } from "../core/eventBus";
 
 export class SelectionManager {
     public onSelect?: (unit: UnitActor) => void;
@@ -28,7 +30,7 @@ export class SelectionManager {
             .find(a => a instanceof UnitActor && a.meshes.includes(pickedMesh as Mesh)) as UnitActor;
 
         if (actor) {
-            console.log(`${actor.name}: ${actor.status}`);
+            console.log(`${actor.name}: ${actor.props.status}`);
             this.SelectUnit(actor);
         }
     }
@@ -42,6 +44,8 @@ export class SelectionManager {
 
     this._selectedUnit = unit;
     this._selectedUnit.SetHighlight(true);
+
+    eventBus.dispatchEvent(new CustomEvent("unitSelected",{detail:this._selectedUnit.props}));
 
     // Update UI widget with unit data
     //this.unitWidget.ShowUnitInfo(unit.metadata);

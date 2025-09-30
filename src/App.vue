@@ -1,43 +1,31 @@
 <template>
-    <!-- 3D + Image Canvases -->
-    <BabylonViewport v-show="show3dViewport" ref="babylonCanvas" />
-    <ImageViewerCanvas v-show="show2dViewport" ref="imageViewerRef" />
-    <Transition name="fade">
-      <PdfViewer pdfUrl="assets/detail.pdf" v-show="showPdf"/>
-    </Transition>
-    <MapViewer v-show="showMap"/>
-    <!-- UI Components -->
-    <TopBar   :time="time" @update:time="onTimeChange" :showTime="showTime" />
-    <FilterPanel
-      v-model:filtering="filtering"
-      v-model:areaMin="areaMin"
-      v-model:areaMax="areaMax"
-      v-model:floorMin="floorMin"
-      v-model:floorMax="floorMax"
-      v-model:bedMin="bedMin"
-      v-model:bedMax="bedMax"
-    />
-    <UnitWidget v-if="unitSelected" :unit="unit" :unitSelected="unitSelected" @close="unitSelected = false" />
-    <BottomNav ref="bottomNav"
-      :activeTab="activeTab"
-      @update:activeTab="activeTab = $event"
-      @toggleFilter="toggleFilter"
-    />
-    <Transition name="fade">
-      <PopupPromp
-      :visible="showInitUnit"
-      :message="welcomeMessage"
-      @yes="onConfirm"
-      @no="onCancel"
-    />
-    </Transition>
+  <!-- 3D + Image Canvases -->
+  <BabylonViewport v-show="show3dViewport" ref="babylonCanvas" />
+  <ImageViewerCanvas v-show="show2dViewport" ref="imageViewerRef" />
+  <Transition name="fade">
+    <PdfViewer pdfUrl="assets/detail.pdf" v-show="showPdf" />
+  </Transition>
+  <MapViewer v-show="showMap" />
+  <!-- UI Components -->
+  <TopBar :time="time" @update:time="onTimeChange" :showTime="showTime" />
+  <FilterPanel v-model:filtering="filtering" v-model:areaMin="areaMin" v-model:areaMax="areaMax"
+    v-model:floorMin="floorMin" v-model:floorMax="floorMax" v-model:bedMin="bedMin" v-model:bedMax="bedMax" />
+  <UnitWidget v-if="unitSelected" :unit="unit" :unitSelected="unitSelected" @close="unitSelected = false" />
+  <BottomNav ref="bottomNav" :activeTab="activeTab" @update:activeTab="activeTab = $event"
+    @toggleFilter="toggleFilter" />
+  <Transition name="fade">
+    <PopupPromp :visible="showInitUnit" :message="welcomeMessage" @yes="onConfirm" @no="onCancel" />
+  </Transition>
+  <Transition name="fade" v-if="selectedApartmentUnit">
+    <UnitDetails :apartmentUnit="selectedApartmentUnit" ref="unitDetailsRef" />
+  </Transition>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, watch, computed, onBeforeUnmount } from 'vue'
 import BabylonViewport from './components/BabylonViewport.vue'
 import ImageViewerCanvas from './components/ImageViewerCanvas.vue'
-import pdfViewer from './components/pdfViewer.vue'  
+import pdfViewer from './components/pdfViewer.vue'
 import TopBar from './components/TopBar.vue'
 import FilterPanel from './components/FilterPanel.vue'
 import UnitWidget from './components/UnitWidget.vue'
@@ -46,6 +34,11 @@ import "./style.css"
 import PdfViewer from './components/pdfViewer.vue'
 import MapViewer from './components/mapViewer.vue'
 import PopupPromp from './components/PopupPromp.vue'
+import UnitDetails from './components/UnitDetails.vue'
+import type { ApartmentProperties } from './types/apartment.ts'
+import { eventBus } from './core/eventBus.ts'
+
+
 
 
 // ===== State =====
@@ -62,12 +55,14 @@ const unit = ref({ name: 'A-302', area: 125, floor: 12, bedrooms: 3 })
 const imageViewerRef = ref<InstanceType<typeof ImageViewerCanvas> | null>(null)
 const babylonCanvas = ref<InstanceType<typeof BabylonViewport> | null>(null)
 const bottomNav = ref<InstanceType<typeof BottomNav> | null>(null)
+const unitDetailsRef = ref<InstanceType<typeof UnitDetails> | null> (null)
 
 //url queries
 const urlQueryName = ref("")
 const urlQueryID = ref(-1)
 const showInitUnit = ref(false)
 const welcomeMessage = computed(() => `Welcome dear ${urlQueryName.value}, would you like to see your apartment?`)
+const selectedApartmentUnit = ref<ApartmentProperties | null>(null)
 
 //filtering input
 const areaMin = ref(80)
@@ -85,7 +80,7 @@ function toggleFilter() {
 
 function onTimeChange(newTime: 'day' | 'night') {
   time.value = newTime
-  toggleTime( newTime)
+  toggleTime(newTime)
 }
 
 
@@ -100,7 +95,7 @@ function toggleTime(newTime: 'day' | 'night') {
   }
 }
 
-function GetUrlQuery(){
+function GetUrlQuery() {
   const query = new URLSearchParams(window.location.search)
 
   // Example: ?tab=filter&unit=A-302
@@ -115,8 +110,8 @@ function GetUrlQuery(){
     urlQueryID.value = Number(iDParam)
   }
 
-  console.log("Name: "+urlQueryName.value+"_ID: "+urlQueryID.value)
-  if (urlQueryID.value!==-1) {
+  console.log("Name: " + urlQueryName.value + "_ID: " + urlQueryID.value)
+  if (urlQueryID.value !== -1) {
     showInitUnit.value = true
   }
 }
@@ -127,7 +122,7 @@ function onConfirm() {
   bottomNav.value?.ActivateFiltering()
   activeTab.value = "filter"
   babylonCanvas.value?.OpenExteriorLevel();
-  show3dViewport.value=true
+  show3dViewport.value = true
 }
 
 function onCancel() {
@@ -183,23 +178,47 @@ watch(activeTab, (newTab, oldTab) => {
 
 // ===== Lifecycle =====
 onMounted(() => {
-  GetUrlQuery()  
+  GetUrlQuery()
+  selectedApartmentUnit.value = {
+    id: -1,
+    type: 'No units selected',
+    floor: 0,
+    area: 0,
+    typology: '---',
+    view: '---',
+    status: 'Available',
+    bedrooms: 0
+  }
+  eventBus.addEventListener("unitSelected",HandleUnitSelection as EventListener)
 })
+
+onBeforeUnmount(() => {})
+
+function HandleUnitSelection(event:CustomEvent) {
+  selectedApartmentUnit.value = event.detail
+  unitDetailsRef.value.openPanel();
+}
 </script>
 
 <style>
-#app{
+#app {
   position: absolute;
   width: 100%;
   height: 100%;
 }
-.fade-enter-active, .fade-leave-active {
+
+.fade-enter-active,
+.fade-leave-active {
   transition: opacity 0.3s ease;
 }
-.fade-enter-from, .fade-leave-to {
+
+.fade-enter-from,
+.fade-leave-to {
   opacity: 0;
 }
-.fade-enter-to, .fade-leave-from {
+
+.fade-enter-to,
+.fade-leave-from {
   opacity: 1;
 }
 </style>

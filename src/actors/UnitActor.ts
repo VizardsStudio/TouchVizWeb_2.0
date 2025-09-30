@@ -1,61 +1,38 @@
 import { Scene, Vector3, Mesh, Space,Animation, StandardMaterial, Color3, Constants,HighlightLayer } from "babylonjs";
 import { MeshActor } from "./MeshActor";
+import type { ApartmentProperties } from "../types/apartment";
 
 export type UnitStatus = "available" | "sold" | "reserved";
 export type UnitType = "apartment" | "duplex" | "penthouse";
 export type UnitView = "Dijlah" | "city" ;
 
-export interface UnitActorOptions {
-    id?: number;
-    status?: UnitStatus;
-    area?: number;
-    floor?: number;
-    type?: UnitType;
-    typology?: string;
-    view?: UnitView;
-    numberOfBedrooms?: number;
-}
-
 export class UnitActor extends MeshActor {
-    public id: number;
-    public status: UnitStatus;
-    public area: number;
-    public floor: number;
-    public type: UnitType;
-    public typology: string;
-    public view: UnitView;
-    public numberOfBedrooms: number;
-    public price: number;
+    public id: number = -1;
+    public props:ApartmentProperties;
     private highlightLayer:HighlightLayer;
 
   constructor(
     name: string,
     position: Vector3,
     scene: Scene,
-    options: UnitActorOptions = {}
   ) {
     super(name, position, scene);
-
-    this.status = options.status ?? "available";
-    this.area = options.area ?? 0;
-    this.floor = options.floor ?? 0;
-    this.type = options.type ?? "apartment";
-    this.typology = options.typology ?? "";
-    this.view = options.view ?? "city";
-    this.numberOfBedrooms = options.numberOfBedrooms ?? 1;
     this.highlightLayer = new HighlightLayer("hl1",this.actorRoot._scene);
-
+    this.props = {
+      id:-1,
+      type:"Undefined",
+      floor:-1,
+      area:-1,
+      typology:"Undefined",
+      view:"Undefined",
+      status:"Available",
+      bedrooms:-1
+    }
   }
 
     public matAvailable:StandardMaterial = this.CreateAnimatedMaterial("Available", Color3.Blue());;
     public matSold:StandardMaterial = this.CreateAnimatedMaterial("Sold",Color3.Red());
     public matReserved:StandardMaterial = this.CreateAnimatedMaterial("Reseved",Color3.Yellow());
-
-  /** Optional: Update unit status at runtime */
-  public SetStatus(newStatus: UnitStatus) {
-    this.status = newStatus;
-    // You can add visual feedback here (e.g., change mesh color)
-  }
 
   public SetId(id:number)
   {
@@ -67,13 +44,13 @@ export class UnitActor extends MeshActor {
     //simulating getting data from the DB
     const random = Math.random()
     if (random<0.3) {
-        this.status = "available"
+        this.props.status = "Available"
     }
     else if(random>0.3 && random<0.6)
     {
-        this.status = "reserved";
+        this.props.status = "Reserved";
     }
-    else this.status = "sold";
+    else this.props.status = "Sold";
 
     this.UpdateMaterial();
 
@@ -82,11 +59,11 @@ export class UnitActor extends MeshActor {
   private UpdateMaterial()
   {
     let material;
-    if (this.status==="available") 
+    if (this.props.status==="Available") 
         {
             material = this.matAvailable;
         }
-        else if(this.status==="reserved")
+        else if(this.props.status==="Reserved")
         {
             material = this.matReserved;
         }
@@ -111,11 +88,6 @@ export class UnitActor extends MeshActor {
         this.actorRoot._scene.beginAnimation(material, 0, 60,true);
         return material;
     }
-
-  /** Optional: Useful helper for displaying unit info */
-  public GetInfo(): string {
-    return `${this.typology} - ${this.area} m² - ${this.numberOfBedrooms} BR - Floor ${this.floor} - ${this.view} view`;
-  }
 
   public SetHighlight(active: boolean) {
     if (active) {

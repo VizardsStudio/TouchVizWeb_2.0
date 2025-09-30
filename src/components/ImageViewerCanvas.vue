@@ -11,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, onBeforeUnmount, defineExpose } from 'vue';
+import { onMounted, ref, onBeforeUnmount, defineExpose, watch } from 'vue';
 import {
   initImageViewer,
   destroyViewer,
@@ -28,6 +28,7 @@ import {
 // configure({ basePath: '/Orbits/Exterior/Day', preloadRadius: 40 });
 
 const imageCanvas = ref<HTMLCanvasElement | null>(null);
+const isMoving = ref(false)
 
 // Forward resize to core
 function onResize() {
@@ -53,6 +54,7 @@ onBeforeUnmount(() => {
 
 // Vue-layer pointer handlers simply forward the event to the core
 function onPointerDown(e: PointerEvent) {
+  isMoving.value = true;
   handlePointerDown(e);
 }
 
@@ -61,6 +63,7 @@ function onPointerMove(e: PointerEvent) {
 }
 
 function onPointerUp(e: PointerEvent) {
+  isMoving.value = false;
   handlePointerUp(e);
 }
 
@@ -74,6 +77,12 @@ defineExpose({
 
   ChangeImageSequence
 
+})
+
+watch(isMoving,(newVal,oldVal) => {
+  if (newVal===true) {
+    imageCanvas.value.style.cursor = "grabbing";
+  }else imageCanvas.value.style.cursor = "grab";
 })
 
 </script>
@@ -97,6 +106,7 @@ defineExpose({
   /* default: landscape-like */
   width: 100%;
   height: auto;
+  cursor: grab;
 
 }
 
