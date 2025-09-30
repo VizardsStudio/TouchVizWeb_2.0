@@ -130,7 +130,7 @@ function onCancel() {
   showInitUnit.value = false
 }
 
-watch(activeTab, (newTab, oldTab) => {
+watch(activeTab, async (newTab, oldTab) => {
   switch (newTab) {
     case 'details':
       showPdf.value = true
@@ -151,12 +151,13 @@ watch(activeTab, (newTab, oldTab) => {
     case 'filter':
       //open exterior level
       babylonCanvas.value?.OpenExteriorLevel();
+      filtering.value = false
       showPdf.value = false
-      filtering.value = true
       showTime.value = false
       showMap.value = false
       show2dViewport.value = false
       show3dViewport.value = true
+      await setTimeout(() => filtering.value = true,500)
       break
     case 'surroundings':
       showMap.value = true
@@ -175,6 +176,7 @@ watch(activeTab, (newTab, oldTab) => {
       break
   }
 })
+
 
 // ===== Lifecycle =====
 onMounted(() => {

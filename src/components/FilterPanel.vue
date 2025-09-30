@@ -3,31 +3,57 @@
     <!-- Area -->
     <div class="filter-group">
       <label>Area (m²)</label>
-      <input type="range" :value="areaMin" @input="onInput($event, 'areaMin')" min="50" max="300" />
-      <input type="range" :value="areaMax" @input="onInput($event, 'areaMax')" min="50" max="300" />
-      <div class="range-values"><span>{{ areaMin }}</span><span>{{ areaMax }}</span></div>
+      <VueSlider
+        v-model="areaRange"
+        :min="50"
+        :max="300"
+        range
+        :tooltip="'always'"
+        :dot-size="18"
+        :height="6"
+        @change="onRangeChange('area', areaRange)"
+      />
+      <!-- <div class="range-values"><span>{{ areaRange[0] }}</span><span>{{ areaRange[1] }}</span></div> -->
     </div>
 
     <!-- Floor -->
     <div class="filter-group">
       <label>Floor</label>
-      <input type="range" :value="floorMin" @input="onInput($event, 'floorMin')" min="1" max="30" />
-      <input type="range" :value="floorMax" @input="onInput($event, 'floorMax')" min="1" max="30" />
-      <div class="range-values"><span>{{ floorMin }}</span><span>{{ floorMax }}</span></div>
+      <VueSlider
+        v-model="floorRange"
+        :min="1"
+        :max="30"
+        range
+        :tooltip="'always'"
+        :dot-size="18"
+        :height="6"
+        @change="onRangeChange('floor', floorRange)"
+      />
+      <!-- <div class="range-values"><span>{{ floorRange[0] }}</span><span>{{ floorRange[1] }}</span></div> -->
     </div>
 
     <!-- Bedrooms -->
     <div class="filter-group">
-      <label>Bedrooms</label>
-      <input type="range" :value="bedMin" @input="onInput($event, 'bedMin')" min="1" max="5" />
-      <input type="range" :value="bedMax" @input="onInput($event, 'bedMax')" min="1" max="5" />
-      <div class="range-values"><span>{{ bedMin }}</span><span>{{ bedMax }}</span></div>
+      <label class="sliderLabel">Bedrooms</label>
+      <VueSlider
+        v-model="bedRange"
+        :min="1"
+        :max="5"
+        range
+        :tooltip="'always'"
+        :dot-size="18"
+        :height="6"
+        @change="onRangeChange('bed', bedRange)"
+      />
+      <!-- <div class="range-values"><span>{{ bedRange[0] }}</span><span>{{ bedRange[1] }}</span></div> -->
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits } from 'vue'
+import { ref, watch } from 'vue'
+import VueSlider from 'vue-3-slider-component'
+//import 'vue-3-slider-component/dist/css/index.css'
 
 // Props
 const props = defineProps<{
@@ -42,7 +68,6 @@ const props = defineProps<{
 
 // Emits
 const emit = defineEmits<{
-  (e: 'update:filtering', value: boolean): void
   (e: 'update:areaMin', value: number): void
   (e: 'update:areaMax', value: number): void
   (e: 'update:floorMin', value: number): void
@@ -51,44 +76,64 @@ const emit = defineEmits<{
   (e: 'update:bedMax', value: number): void
 }>()
 
-// ✅ Slider property type
-type SliderProps = 'areaMin' | 'areaMax' | 'floorMin' | 'floorMax' | 'bedMin' | 'bedMax'
+// Range refs
+const areaRange = ref<[number, number]>([props.areaMin, props.areaMax])
+const floorRange = ref<[number, number]>([props.floorMin, props.floorMax])
+const bedRange = ref<[number, number]>([props.bedMin, props.bedMax])
 
-// TS-safe input handler
-function onInput(e: Event, prop: SliderProps) {
-  const val = +(e.target as HTMLInputElement).value
+// Watch for prop changes
+watch(() => [props.areaMin, props.areaMax], ([min, max]) => areaRange.value = [min, max])
+watch(() => [props.floorMin, props.floorMax], ([min, max]) => floorRange.value = [min, max])
+watch(() => [props.bedMin, props.bedMax], ([min, max]) => bedRange.value = [min, max])
 
-  // Explicitly call the correct emit
-  switch (prop) {
-    case 'areaMin': emit('update:areaMin', val); break
-    case 'areaMax': emit('update:areaMax', val); break
-    case 'floorMin': emit('update:floorMin', val); break
-    case 'floorMax': emit('update:floorMax', val); break
-    case 'bedMin': emit('update:bedMin', val); break
-    case 'bedMax': emit('update:bedMax', val); break
+// Emit changes
+function onRangeChange(type: 'area' | 'floor' | 'bed', range: [number, number]) {
+  switch(type) {
+    case 'area':
+      emit('update:areaMin', range[0])
+      emit('update:areaMax', range[1])
+      break
+    case 'floor':
+      emit('update:floorMin', range[0])
+      emit('update:floorMax', range[1])
+      break
+    case 'bed':
+      emit('update:bedMin', range[0])
+      emit('update:bedMax', range[1])
+      break
   }
 }
 </script>
 
 <style >
 /* ====== Filtering Panel ====== */
+.filter-group label{
+  text-align: center;
+}
 .filter-panel {
   position: absolute;
-  bottom: 6rem;
+  bottom: 5rem;
   left: 50%;
   transform: translateX(-50%) translateY(20px);
   width: 90%;
   max-width: 480px;
+  max-height: 60%;
   background: rgba(0, 0, 0, 0.85);
   padding: 1.5rem;
   border-radius: 20px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(10px);
-
+  overflow: scroll;
   opacity: 0;
   pointer-events: none;
   visibility: hidden; /* hides from layout but keeps it for transitions */
   transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
+
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.filter-panel::-webkit-scrollbar {
+  display: none;
 }
 
 .filter-panel.active {
