@@ -131,7 +131,7 @@ export function handlePointerMove(e: PointerEvent) {
     let deltaX = e.clientX - startX;
     deltaX = deltaX * 0.25;
     const pixelsPerRotation = Math.max(1, canvas.clientWidth * 0.6);
-    const maxFramesPerMove = 30;
+    const maxFramesPerMove = totalFrames;
     const framesMoved = Math.max(
         -maxFramesPerMove,
         Math.min(maxFramesPerMove, Math.floor((deltaX / pixelsPerRotation) * totalFrames))

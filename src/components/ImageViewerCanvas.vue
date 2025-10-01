@@ -185,6 +185,7 @@ watch(isMoving, (newVal, oldVal) => {
   transform: translateX(-50%);
   width: 10%;
   height: 10%;
+  opacity: 0.5;
   pointer-events: none;
   /* so it doesn’t block user input */
 }
@@ -197,7 +198,7 @@ watch(isMoving, (newVal, oldVal) => {
   background-size: contain;
   opacity: 0;
   animation: swipe 2s ease-in-out 2;
-  animation-delay: 2s;
+  animation-delay: 0.5s;
 }
 
 @keyframes swipe {
