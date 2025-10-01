@@ -371,7 +371,6 @@ function getShortestDelta(curr: number, targ: number, total: number) {
     let delta = (targ - curr) % total;
     if (delta > total / 2) delta -= total;
     if (delta < -total / 2) delta += total;
-    console.log(delta);
     return delta;
 }
 

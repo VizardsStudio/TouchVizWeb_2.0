@@ -1,6 +1,6 @@
 (A) IN PROGRESS:
     Optimize the ImageViewer {cm:2025-10-01}
-    swipe animation for ImageViewer
+    swipe animation for ImageViewer {cm:2025-10-01}
     Optimize the BabyloneViewport {cm:2025-10-01} {c}
         multiple materials {cm:2025-10-01}
         load only once {cm:2025-10-01}
@@ -10,8 +10,6 @@
     releasing assets and memory management
     Interior tour editor 
     initial unit selection
-    Open 3d plan scene (depending on unit type)
-    Open interior tour scene (depending on unit type)
 (B) TODO: {c}
     filtering
     interior Tour Editor (exporting data)

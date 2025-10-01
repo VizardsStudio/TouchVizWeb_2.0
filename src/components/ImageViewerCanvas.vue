@@ -1,10 +1,14 @@
 <template>
   <div class="canvas-container">
     <canvas ref="imageCanvas" class="image-canvas" @pointerdown="onPointerDown" @pointermove="onPointerMove"
-      @pointerup="onPointerUp"></canvas>
+      @pointerup="onPointerUp">
+    </canvas>
     <div v-if="isLoading" class="loadingWidget">
       <div class="spinner"></div>
       <label>{{ progressText }} </label>
+    </div>
+    <div class="demo-swipe">
+      <div class="finger"></div>
     </div>
   </div>
 </template>
@@ -51,7 +55,12 @@ onMounted(() => {
   //return //temporarily disabled to work on other features
   if (!imageCanvas.value) return;
   // init
-  initImageViewer(imageCanvas.value, 100);
+  const ctx = imageCanvas.value.getContext("2d");
+  if (ctx) {
+    ctx.fillStyle = "black"; // any CSS color: hex, rgb, rgba, etc.
+    ctx.fillRect(0, 0, imageCanvas.value.width, imageCanvas.value.height);
+  }
+  initImageViewer(imageCanvas.value, 100); 
   //play initial animation
   //animateFrames(100,150,1000,1,0.5,0.5)
 
@@ -100,6 +109,7 @@ watch(isMoving, (newVal, oldVal) => {
 </script>
 
 <style scoped>
+
 .loadingWidget {
   position: absolute;
   left: 10px;
@@ -167,4 +177,50 @@ watch(isMoving, (newVal, oldVal) => {
   }
 }
 
+.demo-swipe {
+  position: absolute;
+  bottom: 20%;
+  /* adjust based on your UI */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 10%;
+  height: 10%;
+  pointer-events: none;
+  /* so it doesn’t block user input */
+}
+
+.finger {
+  position: absolute;
+  width: 10vw;
+  height: 10vh;
+  background: url('src/swipe.png') no-repeat center center;
+  background-size: contain;
+  opacity: 0;
+  animation: swipe 2s ease-in-out 2;
+  animation-delay: 2s;
+}
+
+@keyframes swipe {
+  0% {
+    transform: translateX(0) translateY(0) rotate(0deg);
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  50% {
+    transform: translateX(100px) translateY(0) rotate(0deg);
+  }
+
+  90% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateX(0) translateY(0) rotate(0deg);
+    opacity: 0;
+  }
+}
 </style>
