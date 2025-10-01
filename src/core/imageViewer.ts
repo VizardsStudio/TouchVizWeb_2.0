@@ -1,11 +1,17 @@
 // src/core/imageViewer.ts
-// Fully self-contained image viewer core that exposes init/destroy and pointer handlers.
-// Adjust `basePath` if your images are located elsewhere (public/ or CDN).
+// Progressive staged 360 image viewer with robust cancellation/generation guards
+// Exports: configure, initImageViewer, destroyViewer, handlePointerDown, handlePointerMove,
+// handlePointerUp, setTargetFrame, onHostResize, changeImageSequence
 
-const totalFrames = 180;
+// ---------------------- Configurable parameters ----------------------
+let totalFrames = 180;
 let preloadRadius = 10;
-let maxCacheSize = 60;
+let maxCacheSize = totalFrames;
 
+// concurrency for decoding (createImageBitmap)
+const MAX_CONCURRENT_DECODE = 6;
+
+// ---------------------- Rendering state ----------------------
 let canvas: HTMLCanvasElement | null = null;
 let ctx: CanvasRenderingContext2D | null = null;
 
@@ -13,153 +19,102 @@ let currentFrameFloat = 0;
 let targetFrame = 0;
 let startFrame = 0;
 
-// pointer drag state
 let pointerDown = false;
 let startX = 0;
 
-// rendering/cache
-const cache: Map<number, HTMLImageElement> = new Map();
 let animationId: number | null = null;
-let previousImage: HTMLImageElement | null = null;
+let lastDrawnFrame = -1;
 
-// concurrency control for decoding
-const MAX_CONCURRENT_DECODE = 3;
+// Cache stores ImageBitmap for efficient drawing
+const cache: Map<number, ImageBitmap> = new Map();
+
+// Decode queue (array of promises) to limit concurrency
 let decodeQueue: Promise<any>[] = [];
 
-// base path for frames — change if needed
+// ---------------------- Cancellation / generation control ----------------------
+let currentAbortController: AbortController | null = null;
+let currentGenerationId = 0;
+
+//------------------------- progress callbacks --------------------------------
+let progressCallback: ((loaded: number, total: number) => void) | null = null;
+
+export function onProgress(cb: (loaded: number, total: number) => void) {
+    progressCallback = cb;
+}
+
+// ---------------------- Path builder ----------------------
 let basePath = 'assets/Orbits/Exterior/Day';
 function frameUrl(i: number) {
     const idx = String(i).padStart(4, '0');
     return `${basePath}/Exterior360_2.${idx}.jpeg`;
 }
 
-// ----------------- Public API -----------------
+// ---------------------- Public API ----------------------
 export function configure(options: {
     totalFrames?: number;
     preloadRadius?: number;
     maxCacheSize?: number;
     basePath?: string;
 }) {
-    if (options.totalFrames) {
-        // NOTE: this simple implementation assumes totalFrames set before init
-        // For dynamic totalFrames you'd need to adapt a few internals.
-    }
-    if (options.preloadRadius !== undefined) preloadRadius = options.preloadRadius;
-    if (options.maxCacheSize !== undefined) maxCacheSize = options.maxCacheSize;
-    if (options.basePath !== undefined) basePath = options.basePath;
+    if (typeof options.totalFrames === 'number') totalFrames = options.totalFrames;
+    if (typeof options.preloadRadius === 'number') preloadRadius = options.preloadRadius;
+    if (typeof options.maxCacheSize === 'number') maxCacheSize = options.maxCacheSize;
+    if (typeof options.basePath === 'string') basePath = options.basePath;
 }
 
-export function initImageViewer(canvasEl: HTMLCanvasElement, initialFrame: number) {
+/**
+ * Initialize viewer with a canvas element and initial frame.
+ * Starts staged preload in background.
+ */
+export async function initImageViewer(canvasEl: HTMLCanvasElement, initialFrame: number) {
     canvas = canvasEl;
     ctx = canvas.getContext('2d');
-
     if (!ctx) throw new Error('2D context not available');
 
     canvas.style.touchAction = 'none';
     resizeCanvas();
 
-    preloadRange(initialFrame);
+    // Reset generation/controller for a fresh start
+    if (currentAbortController) currentAbortController.abort();
+    currentGenerationId++;
+    currentAbortController = new AbortController();
+    const signal = currentAbortController.signal;
+    const generation = currentGenerationId;
+
     currentFrameFloat = initialFrame;
     targetFrame = initialFrame;
-    animationLoop();
-}
 
-/**
- * Change the current image sequence (e.g., time of day)
- */
-export async function changeImageSequence(newBasePath: string, startFrame: number = Math.round(currentFrameFloat)) {
-    if (!canvas) return;
-
-    if (customAnimId !== null) cancelAnimationFrame(customAnimId);
-    customAnimId = null;
-
-    basePath = newBasePath;
-    cache.clear();
-    previousImage = null;
-
-    currentFrameFloat = startFrame;
-    targetFrame = startFrame;
-
-    await loadFrame(startFrame);
-    const img = cache.get(startFrame);
+    // Stage 1: load and draw first frame synchronously (await so user sees something)
+    try {
+        await loadFrame(initialFrame, signal, generation);
+    } catch (err) {
+        // Ignored — still try to continue
+    }
+    const img = cache.get(initialFrame);
     if (img) drawImageCover(img);
-}
 
-let customAnimId: number | null = null;
+    // Kick off Stage 2 + 3 in background (non-blocking)
+    stagedPreload(initialFrame, signal, generation).catch(() => { /* swallow */ });
 
-export async function animateFrames(
-    startFrame: number,
-    endFrame: number,
-    duration: number,
-    direction: 1 | -1 = 1,
-    startEase: number = 0.1,
-    endEase: number = 0.1
-) {
-    if (!canvas) return;
-    if (customAnimId !== null) cancelAnimationFrame(customAnimId);
-
-    const framesToLoad: number[] = [];
-    if (direction === 1) {
-        for (let f = startFrame; f !== (endFrame + 1) % totalFrames; f = (f + 1) % totalFrames) {
-            framesToLoad.push(f);
-            if (f === endFrame) break;
-        }
-    } else {
-        for (let f = startFrame; f !== (endFrame - 1 + totalFrames) % totalFrames; f = (f - 1 + totalFrames) % totalFrames) {
-            framesToLoad.push(f);
-            if (f === endFrame) break;
-        }
-    }
-
-    // preload sequentially for stability
-    for (const f of framesToLoad) {
-        await loadFrame(f);
-    }
-
-    const totalFramesToAnimate = framesToLoad.length;
-    const startTime = performance.now();
-
-    function stepAnimation(now: number) {
-        const elapsed = now - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-
-        let easedProgress: number;
-        if (progress < startEase) {
-            easedProgress = (progress / startEase) ** 2 * startEase;
-        } else if (progress > 1 - endEase) {
-            const t = (progress - (1 - endEase)) / endEase;
-            easedProgress = 1 - (1 - t) ** 2 * endEase;
-        } else {
-            const middleProgress = (progress - startEase) / (1 - startEase - endEase);
-            easedProgress = startEase + middleProgress * (1 - startEase - endEase);
-        }
-
-        const frameIndex = Math.floor(easedProgress * (totalFramesToAnimate - 1));
-        if (framesToLoad[frameIndex] !== undefined) {
-            targetFrame = framesToLoad[frameIndex];
-        }
-
-        const img = cache.get(targetFrame);
-        if (img) drawImageCover(img);
-
-        if (progress < 1) {
-            customAnimId = requestAnimationFrame(stepAnimation);
-        } else {
-            customAnimId = null;
-        }
-        //console.log("final frame", frameIndex, framesToLoad.length - 1)
-
-    }
-
-    customAnimId = requestAnimationFrame(stepAnimation);
+    // Start render loop
+    animationLoop();
 }
 
 export function destroyViewer() {
     if (animationId !== null) cancelAnimationFrame(animationId);
     animationId = null;
+
+    if (currentAbortController) currentAbortController.abort();
+    currentAbortController = null;
+    currentGenerationId++;
+
+    cache.forEach(b => b.close && b.close()); // ImageBitmap has close() in some contexts
     cache.clear();
+    decodeQueue = [];
+
     canvas = null;
     ctx = null;
+    lastDrawnFrame = -1;
 }
 
 // Pointer handlers
@@ -174,14 +129,15 @@ export function handlePointerDown(e: PointerEvent) {
 export function handlePointerMove(e: PointerEvent) {
     if (!pointerDown || !canvas) return;
     let deltaX = e.clientX - startX;
-    deltaX = deltaX * 0.25
+    deltaX = deltaX * 0.25;
     const pixelsPerRotation = Math.max(1, canvas.clientWidth * 0.6);
     const maxFramesPerMove = 30;
-    const framesMoved = Math.max(-maxFramesPerMove, Math.min(maxFramesPerMove, Math.floor((deltaX / pixelsPerRotation) * totalFrames)));
+    const framesMoved = Math.max(
+        -maxFramesPerMove,
+        Math.min(maxFramesPerMove, Math.floor((deltaX / pixelsPerRotation) * totalFrames))
+    );
     targetFrame = (startFrame + framesMoved) % totalFrames;
     if (targetFrame < 0) targetFrame += totalFrames;
-
-    preloadRange(targetFrame);
 }
 
 export function handlePointerUp(e: PointerEvent) {
@@ -190,48 +146,209 @@ export function handlePointerUp(e: PointerEvent) {
     try { canvas.releasePointerCapture?.(e.pointerId); } catch { }
 }
 
+/**
+ * Programmatic frame set (keeps behavior consistent)
+ */
 export function setTargetFrame(frame: number) {
     targetFrame = ((frame % totalFrames) + totalFrames) % totalFrames;
-    preloadRange(targetFrame);
 }
 
-// ----------------- Internal helpers -----------------
-async function loadFrame(i: number): Promise<HTMLImageElement> {
+// Resize handler
+export function onHostResize() {
+    resizeCanvas();
+}
+
+// ---------------------- Change image sequence ----------------------
+/**
+ * Switch to a new basePath/sequence (e.g., Day -> Night).
+ * Cancels any pending loads from previous sequence and restarts staged preload.
+ */
+export async function changeImageSequence(newBasePath: string, startFrame: number = Math.round(currentFrameFloat)) {
+    if (!canvas) return;
+
+    // Cancel previous loads
+    if (currentAbortController) currentAbortController.abort();
+
+    // New generation + controller
+    currentGenerationId++;
+    currentAbortController = new AbortController();
+    const signal = currentAbortController.signal;
+    const generation = currentGenerationId;
+
+    // Reset visual state
+    cache.forEach(b => b.close && b.close());
+    cache.clear();
+    decodeQueue = [];
+
+    currentFrameFloat = startFrame;
+    targetFrame = startFrame;
+    basePath = newBasePath;
+
+    // Stage 1: load and draw first frame immediately
+    try {
+        await loadFrame(startFrame, signal, generation);
+    } catch (err) {
+        // swallow errors (e.g., abort)
+    }
+    const img = cache.get(startFrame);
+    if (img) drawImageCover(img);
+
+    // Kick off staged preload in background (auto-cancelled if switched again)
+    stagedPreload(startFrame, signal, generation).catch(() => { /* swallow */ });
+}
+
+// ---------------------- Internal: staged preload (sparse + progressive midpoint) ----------------------
+async function stagedPreload(initialFrame: number, signal: AbortSignal, generationId: number) {
+    // STAGE 2: sparse frames (fire-and-forget but respect generation/signal)
+    const step = getDynamicStep();
+    const sparseFrames: number[] = [];
+    for (let i = 0; i < totalFrames; i += step) {
+        if (i !== initialFrame) sparseFrames.push(i);
+    }
+
+    // Mark loadedFrames with initialFrame loaded already (if it is)
+    const loadedFrames = new Set<number>();
+    if (cache.has(initialFrame)) loadedFrames.add(initialFrame);
+
+    // Fire off sparse loads in parallel but non-blocking
+    sparseFrames.forEach(f => {
+        loadFrame(f, signal, generationId)
+            .then(() => { if (generationId === currentGenerationId) loadedFrames.add(f); })
+            .catch(() => { /* ignore */ });
+    });
+
+    // Wait a short time to allow some sparse frames to complete and populate loadedFrames
+    // but do NOT block the UI. This gives the user immediate interactivity while sparse frames arrive.
+    await delay(50);
+    if (signal.aborted || generationId !== currentGenerationId) return;
+
+    // Ensure loadedFrames contains what cache has so far (in case some resolved quickly)
+    for (const key of cache.keys()) loadedFrames.add(key);
+
+    // STAGE 3: progressive midpoint refinement that evenly fills gaps
+    // We'll loop until all frames are loaded or sequence/generation is canceled.
+    while (loadedFrames.size < totalFrames) {
+        if (signal.aborted || generationId !== currentGenerationId) return;
+
+        const sorted = Array.from(loadedFrames).sort((a, b) => a - b);
+
+        // If nothing is currently loaded (rare but possible), include initialFrame and some sparse frames
+        if (sorted.length === 0) {
+            // wait a bit for sparse frames to come in
+            await delay(100);
+            for (const key of cache.keys()) loadedFrames.add(key);
+            continue;
+        }
+
+        // Find midpoints for each gap, collect unique midpoints
+        const newFrames: number[] = [];
+        for (let i = 0; i < sorted.length; i++) {
+            const start = sorted[i];
+            const end = sorted[(i + 1) % sorted.length]; // wrap
+            const gap = (end - start + totalFrames) % totalFrames;
+            if (gap > 1) {
+                const midpoint = (start + Math.floor(gap / 2)) % totalFrames;
+                if (!loadedFrames.has(midpoint)) newFrames.push(midpoint);
+            }
+        }
+
+        // if (newFrames.length === 0) {
+        //   // No more midpoints: maybe some remaining single-frame gaps — load them sequentially
+        //   for (let i = 0; i < totalFrames; i++) {
+        //     if (signal.aborted || generationId !== currentGenerationId) return;
+        //     if (!cache.has(i)) {
+        //       try { await loadFrame(i, signal, generationId); loadedFrames.add(i); } catch { }
+        //     }
+        //   }
+        //   return;
+        // }
+
+        // Load the newFrames in parallel but respect concurrency via loadFrame implementation
+        await Promise.all(
+            newFrames.map(f => loadFrame(f, signal, generationId).then(() => {
+                if (generationId === currentGenerationId) loadedFrames.add(f);
+            }).catch(() => { /* ignore */ }))
+        );
+
+        // Small pacing delay so we don't spam network/decoder on very fast networks
+        await delay(20);
+    }
+}
+
+// ---------------------- Internal: loadFrame (fetch + createImageBitmap) ----------------------
+/**
+ * Loads a frame index and stores it in cache as ImageBitmap.
+ * Respects AbortSignal and generationId. Also enforces MAX_CONCURRENT_DECODE
+ */
+async function loadFrame(i: number, signal: AbortSignal, generationId: number): Promise<ImageBitmap> {
+    // Abort quickly if the caller already cancelled
+    if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
+
     const idx = ((i % totalFrames) + totalFrames) % totalFrames;
     if (cache.has(idx)) return cache.get(idx)!;
 
-    const img = new Image();
-    img.src = frameUrl(idx);
+    // Create a promise that will perform fetch -> blob -> createImageBitmap
+    const loadPromise = (async () => {
+        const url = frameUrl(idx);
+        // Fetch with abort support
+        const res = await fetch(url, { signal });
+        if (!res.ok) throw new Error(`Failed to fetch frame ${idx}: ${res.status}`);
 
-    const decodePromise = img.decode()
-        .catch(() => console.warn('Failed to decode frame', idx, img.src))
-        .then(() => {
-            cache.set(idx, img);
-            decodeQueue = decodeQueue.filter(p => p !== decodePromise);
-        });
+        const blob = await res.blob();
 
-    decodeQueue.push(decodePromise);
+        // createImageBitmap may be CPU heavy, so we treat it as a decode operation to throttle
+        const bitmap = await createImageBitmap(blob);
+        return bitmap;
+    })();
 
-    if (decodeQueue.length > MAX_CONCURRENT_DECODE) {
-        await Promise.race(decodeQueue);
+    // Add to decode queue and throttle if necessary
+    decodeQueue.push(loadPromise);
+    try {
+        if (decodeQueue.length > MAX_CONCURRENT_DECODE) {
+            // Wait for any of the currently active decodes to finish before proceeding
+            await Promise.race(decodeQueue);
+        }
+
+        // Await this load (it might reject due to abort)
+        const bitmap = await loadPromise;
+
+        // If this load belongs to a stale generation, discard result
+        if (generationId !== currentGenerationId || signal.aborted) {
+            // close bitmap if possible
+            try { bitmap.close && bitmap.close(); } catch { /* ignore */ }
+            throw new DOMException('Aborted', 'AbortError');
+        }
+
+        // Store into cache (evict if necessary)
+        cache.set(idx, bitmap);
+        enforceCacheLimit();
+
+        return bitmap;
+    } finally {
+        // Remove this promise from decodeQueue when finished/failed
+        decodeQueue = decodeQueue.filter(p => p !== loadPromise);
+        // report progress
+        if (progressCallback) {
+            progressCallback(cache.size, totalFrames);
+        }
     }
-
-    if (cache.size > maxCacheSize) {
-        const firstKey = cache.keys().next().value;
-        if (firstKey !== undefined) cache.delete(firstKey);
-    }
-
-    await decodePromise;
-    return img;
 }
 
-function preloadRange(center: number) {
-    const framesToPreload: number[] = [];
-    for (let offset = -preloadRadius; offset <= preloadRadius; offset++) {
-        const idx = (center + offset + totalFrames) % totalFrames;
-        framesToPreload.push(idx);
+// ---------------------- Helpers ----------------------
+function getDynamicStep(): number {
+    if (totalFrames <= 180) return 10;
+    if (totalFrames <= 360) return 15;
+    return Math.max(5, Math.floor(totalFrames / 24));
+}
+
+function enforceCacheLimit() {
+    while (cache.size > maxCacheSize) {
+        const firstKey = cache.keys().next().value;
+        if (firstKey === undefined) break;
+        const bmp = cache.get(firstKey);
+        if (bmp) try { bmp.close && bmp.close(); } catch { /* ignore */ }
+        cache.delete(firstKey);
     }
-    for (const f of framesToPreload) loadFrame(f).catch(() => { });
 }
 
 function resizeCanvas() {
@@ -241,12 +358,10 @@ function resizeCanvas() {
     canvas.height = Math.round(canvas.clientHeight * dpr);
 }
 
-function drawImageCover(img: HTMLImageElement) {
+function drawImageCover(bitmap: ImageBitmap) {
     if (!ctx || !canvas) return;
-    // remove clearing to avoid flicker
-    //ctx.globalAlpha = 1;
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    //previousImage = img;
+    // drawImage accepts ImageBitmap; automatically handles scaling
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
 }
 
 function getShortestDelta(curr: number, targ: number, total: number) {
@@ -258,15 +373,25 @@ function getShortestDelta(curr: number, targ: number, total: number) {
 
 function animationLoop() {
     if (!canvas) return;
+
     const shortestDelta = getShortestDelta(currentFrameFloat, targetFrame, totalFrames);
     currentFrameFloat += shortestDelta;
 
     const frameIdx = Math.round((currentFrameFloat + totalFrames) % totalFrames);
-    loadFrame(frameIdx).then(img => drawImageCover(img)).catch(() => { });
+
+    if (frameIdx !== lastDrawnFrame) {
+        const img = cache.get(frameIdx);
+        if (img) {
+            drawImageCover(img);
+            lastDrawnFrame = frameIdx;
+        } else {
+            // If frame not loaded yet, don't draw (keeps last image visible)
+        }
+    }
 
     animationId = requestAnimationFrame(animationLoop);
 }
 
-export function onHostResize() {
-    resizeCanvas();
+function delay(ms: number) {
+    return new Promise<void>(r => setTimeout(r, ms));
 }
