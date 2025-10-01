@@ -1,8 +1,10 @@
-(A) IN PROGRESS:
-    implement range sliders {cm:2025-09-30}
-    database fetch {cm:2025-09-30}
-    unitObject parsing {cm:2025-09-30}
-    adding exterior 3d model {cm:2025-09-30}
+(A) IN PROGRESS: {c}
+    Optimize the ImageViewer
+    Optimize the BabyloneViewport
+    3d plan/interior tour scene management
+    Central project data
+    releasing assets and memory management
+    Interior tour editor 
     initial unit selection
     Open 3d plan scene (depending on unit type)
     Open interior tour scene (depending on unit type)

@@ -17,7 +17,7 @@ export class LevelExterior extends LevelBase {
     }
 
     protected SetupScene() {
-        this.InspectorShow(false);
+        //this.InspectorShow(false);
         //load units and spawn unit actors
         SceneLoader.ImportMeshAsync("", "assets/gltf/exterior/", "Units.glb", this.scene)
             .then(result => {
