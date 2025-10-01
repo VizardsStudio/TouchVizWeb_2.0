@@ -1,4 +1,4 @@
-import { Engine, Scene } from "babylonjs"
+import { Color4, Engine, Scene } from "babylonjs"
 import { LevelBase } from "./LevelBase";
 
 export class EngineManager {
@@ -28,9 +28,15 @@ export class EngineManager {
         this.Level = level;
         this.RunRenderLoop(level);
     }
+    public CloseLevel<T extends LevelBase>(level: T) {
+        if (!level?.scene) return;
+        this.engine.stopRenderLoop();
+        level.scene.dispose();
+        this.engine.clear(new Color4(1, 1, 1, 1), true, true);
+        level = null;
+    }
 
     private RunRenderLoop(level: LevelBase) {
-
         this.engine.runRenderLoop(() => {
             let dt = this.engine.getDeltaTime() / 1000 //converting to seconds
             level.Update(dt)

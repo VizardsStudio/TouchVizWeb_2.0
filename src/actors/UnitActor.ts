@@ -1,4 +1,4 @@
-import { Scene, Vector3, Mesh, Space,Animation, StandardMaterial, Color3, Constants,HighlightLayer } from "babylonjs";
+import { Scene, Vector3, Mesh, Space,Animation, StandardMaterial, Color3, Constants,HighlightLayer, Material } from "babylonjs";
 import { MeshActor } from "./MeshActor";
 import type { ApartmentProperties } from "../types/apartment";
 
@@ -30,9 +30,9 @@ export class UnitActor extends MeshActor {
     }
   }
 
-    public matAvailable:StandardMaterial = this.CreateAnimatedMaterial("Available", Color3.Blue());;
-    public matSold:StandardMaterial = this.CreateAnimatedMaterial("Sold",Color3.Red());
-    public matReserved:StandardMaterial = this.CreateAnimatedMaterial("Reseved",Color3.Yellow());
+    public matAvailable:Material;
+    public matSold:Material;
+    public matReserved:Material;
 
   public SetId(id:number)
   {
@@ -70,24 +70,6 @@ export class UnitActor extends MeshActor {
         else material = this.matSold;
     this.SetMaterial(material);
   }
-
-    public CreateAnimatedMaterial(name:string, color:Color3):StandardMaterial
-    {
-        const material = new StandardMaterial(name, this.actorRoot._scene);
-        material.diffuseColor = color;
-        material.alpha = 0.8;
-        material.alphaMode = Constants.ALPHA_ADD;
-        const alphaAnimation = new Animation("alphaPulse","alpha",30,Animation.ANIMATIONTYPE_FLOAT,Animation.ANIMATIONLOOPMODE_CYCLE);
-        const keys = [
-            {frame:0, value:0.8},
-            {frame:30, value:0.2},
-            {frame:60, value:0.8}
-        ];
-        alphaAnimation.setKeys(keys);
-        material.animations = [alphaAnimation];
-        this.actorRoot._scene.beginAnimation(material, 0, 60,true);
-        return material;
-    }
 
   public SetHighlight(active: boolean) {
     if (active) {

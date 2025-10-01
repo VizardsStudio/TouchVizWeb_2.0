@@ -21,6 +21,7 @@ onMounted(() => {
   //initializing the 3d Engine
   engineManager = EngineManager.getInstance(renderCanvas.value)
   engineManager.engine.resize()
+  OpenExteriorLevel();
 })
 
 function OpenExteriorLevel(){
@@ -29,6 +30,7 @@ function OpenExteriorLevel(){
   exteriorLevel = new LevelExterior(engineManager.engine)
   engineManager.OpenLevel(exteriorLevel)
 }
+
 
 //expose methods
 defineExpose({OpenExteriorLevel})

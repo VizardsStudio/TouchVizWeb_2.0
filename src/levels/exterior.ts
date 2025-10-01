@@ -16,6 +16,10 @@ export class LevelExterior extends LevelBase {
         this.selectionManager = new SelectionManager(this.scene, this.actorManager);
     }
 
+    public matAvailable: StandardMaterial = this.CreateAnimatedMaterial("Available", Color3.Blue());;
+    public matSold: StandardMaterial = this.CreateAnimatedMaterial("Sold", Color3.Red());
+    public matReserved: StandardMaterial = this.CreateAnimatedMaterial("Reseved", Color3.Yellow());
+
     protected SetupScene() {
         //this.InspectorShow(false);
         //load units and spawn unit actors
@@ -32,6 +36,9 @@ export class LevelExterior extends LevelBase {
                         const unitActor: UnitActor = this.actorManager.SpawnActor(UnitActor, `UnitActor_${mesh.name}`, Vector3.Zero());
                         //unitActors.push(unitActor);
                         unitActor.AddMesh(mesh);
+                        unitActor.matAvailable = this.matAvailable;
+                        unitActor.matReserved = this.matReserved;
+                        unitActor.matSold = this.matSold;
                     }
                 });
 
@@ -52,15 +59,15 @@ export class LevelExterior extends LevelBase {
         matWater.diffuseColor = new Color3(0.714, 0.855, 0.878);
         const matRoad = new StandardMaterial("Road", this.scene);
         matRoad.diffuseColor = new Color3(0.6, 0.6, 0.6);
-        const matGold = new PBRMaterial("Gold",this.scene);
+        const matGold = new PBRMaterial("Gold", this.scene);
         matGold.metallic = 1;
         matGold.albedoColor = new Color3(0.729, 0.529, 0.298);
         matGold.roughness = 0.05;
 
         //load and import other 3d models
-        const meshes:AbstractMesh[] = [];
-        SceneLoader.ImportMeshAsync("", "assets/gltf/exterior/3dModels/", "tower LOD 0.glb", this.scene).then((result) => {this.SetMaterial(result.meshes, matSolid); meshes.concat(result.meshes)});
-        SceneLoader.ImportMeshAsync("", "assets/gltf/exterior/3dModels/", "context.glb", this.scene).then((result) => {this.SetMaterial(result.meshes, matContext); meshes.concat(result.meshes)});
+        const meshes: AbstractMesh[] = [];
+        SceneLoader.ImportMeshAsync("", "assets/gltf/exterior/3dModels/", "tower LOD 0.glb", this.scene).then((result) => { this.SetMaterial(result.meshes, matSolid); meshes.concat(result.meshes) });
+        SceneLoader.ImportMeshAsync("", "assets/gltf/exterior/3dModels/", "context.glb", this.scene).then((result) => { this.SetMaterial(result.meshes, matContext); meshes.concat(result.meshes) });
         SceneLoader.ImportMeshAsync("", "assets/gltf/exterior/3dModels/", "glass.glb", this.scene).then((result) => this.SetMaterial(result.meshes, matGlass));
         SceneLoader.ImportMeshAsync("", "assets/gltf/exterior/3dModels/", "greens.glb", this.scene).then((result) => this.SetMaterial(result.meshes, matGreen));
         SceneLoader.ImportMeshAsync("", "assets/gltf/exterior/3dModels/", "roads.glb", this.scene).then((result) => this.SetMaterial(result.meshes, matRoad));
@@ -74,14 +81,14 @@ export class LevelExterior extends LevelBase {
         this.camera.radius = 320;
         this.camera.upperRadiusLimit = 400;
         this.camera.lowerRadiusLimit = 260;
-        this.camera.upperBetaLimit = 1.5;   
+        this.camera.upperBetaLimit = 1.5;
 
         //environment and lighting
         this.light.specular = Color3.Black();
         this.light.intensity = 1;
-        this.scene.clearColor = new Color4(1,1,1,1);
+        this.scene.clearColor = new Color4(1, 1, 1, 1);
         this.scene.fogEnabled = true;
-        this.scene.fogMode = 3; 
+        this.scene.fogMode = 3;
         this.scene.fogColor = Color3.White();
         this.scene.fogStart = 550;
         this.scene.fogEnd = 600;
@@ -115,8 +122,24 @@ export class LevelExterior extends LevelBase {
         } catch (error) {
             console.error("❌ Failed to apply material to meshes:", error);
         }
+
     }
 
-
+    public CreateAnimatedMaterial(name: string, color: Color3): StandardMaterial {
+        const material = new StandardMaterial(name, this.scene);
+        material.diffuseColor = color;
+        material.alpha = 0.8;
+        material.alphaMode = Constants.ALPHA_ADD;
+        const alphaAnimation = new Animation("alphaPulse", "alpha", 30, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE);
+        const keys = [
+            { frame: 0, value: 1 },
+            { frame: 30, value: 0.4 },
+            { frame: 60, value: 1 }
+        ];
+        alphaAnimation.setKeys(keys);
+        material.animations = [alphaAnimation];
+        this.scene.beginAnimation(material, 0, 60, true);
+        return material;
+    }
 
 }

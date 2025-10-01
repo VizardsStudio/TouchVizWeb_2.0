@@ -1,6 +1,10 @@
-(A) IN PROGRESS: {c}
-    Optimize the ImageViewer
-    Optimize the BabyloneViewport
+(A) IN PROGRESS:
+    Optimize the ImageViewer {cm:2025-10-01}
+    swipe animation for ImageViewer
+    Optimize the BabyloneViewport {cm:2025-10-01} {c}
+        multiple materials {cm:2025-10-01}
+        load only once {cm:2025-10-01}
+        unload scene {cm:2025-10-01}
     3d plan/interior tour scene management
     Central project data
     releasing assets and memory management

@@ -158,6 +158,7 @@ watch(isMoving, (newVal, oldVal) => {
 
 }
 
+
 /* portrait orientation */
 @media (orientation: portrait) {
   .image-canvas {
@@ -165,4 +166,5 @@ watch(isMoving, (newVal, oldVal) => {
     height: 100%;
   }
 }
+
 </style>

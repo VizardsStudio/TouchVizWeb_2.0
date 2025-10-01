@@ -45,7 +45,7 @@ import { eventBus } from './core/eventBus.ts'
 const time = ref<'day' | 'night'>('day')
 const activeTab = ref('home')
 const show2dViewport = ref(true)
-const show3dViewport = ref(true)
+const show3dViewport = ref(false)
 const filtering = ref(false)
 const showPdf = ref(false)
 const showTime = ref(true)
@@ -150,7 +150,7 @@ watch(activeTab, async (newTab, oldTab) => {
       break
     case 'filter':
       //open exterior level
-      babylonCanvas.value?.OpenExteriorLevel();
+      //babylonCanvas.value?.OpenExteriorLevel();
       filtering.value = false
       showPdf.value = false
       showTime.value = false

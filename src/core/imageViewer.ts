@@ -358,6 +358,7 @@ function resizeCanvas() {
     const dpr = Math.max(1, window.devicePixelRatio || 1);
     canvas.width = Math.round(canvas.clientWidth * dpr);
     canvas.height = Math.round(canvas.clientHeight * dpr);
+    lastDrawnFrame = -1;
 }
 
 function drawImageCover(bitmap: ImageBitmap) {
