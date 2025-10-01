@@ -191,8 +191,10 @@ export async function changeImageSequence(newBasePath: string, startFrame: numbe
         // swallow errors (e.g., abort)
     }
     const img = cache.get(startFrame);
-    if (img) drawImageCover(img);
-
+    if (img) {
+        drawImageCover(img);
+        lastDrawnFrame = -1; // 🔁 Force next animation loop iteration to redraw too
+    }
     // Kick off staged preload in background (auto-cancelled if switched again)
     stagedPreload(startFrame, signal, generation).catch(() => { /* swallow */ });
 }
@@ -368,6 +370,7 @@ function getShortestDelta(curr: number, targ: number, total: number) {
     let delta = (targ - curr) % total;
     if (delta > total / 2) delta -= total;
     if (delta < -total / 2) delta += total;
+    console.log(delta);
     return delta;
 }
 
@@ -376,6 +379,7 @@ function animationLoop() {
 
     const shortestDelta = getShortestDelta(currentFrameFloat, targetFrame, totalFrames);
     currentFrameFloat += shortestDelta;
+    currentFrameFloat = (currentFrameFloat + totalFrames) % totalFrames;
 
     const frameIdx = Math.round((currentFrameFloat + totalFrames) % totalFrames);
 

@@ -2,10 +2,10 @@
   <div class="canvas-container">
     <canvas ref="imageCanvas" class="image-canvas" @pointerdown="onPointerDown" @pointermove="onPointerMove"
       @pointerup="onPointerUp"></canvas>
-  </div>
-  <div v-if="isLoading" class="loadingWidget">
-    <div class="spinner"></div>
-    <label>{{ progressText }} </label>
+    <div v-if="isLoading" class="loadingWidget">
+      <div class="spinner"></div>
+      <label>{{ progressText }} </label>
+    </div>
   </div>
 </template>
 
