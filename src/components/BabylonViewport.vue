@@ -35,8 +35,9 @@ function OpenExteriorLevel(){
 function OpenInteriorTourLevel(type:string){
   if(!engineManager) return
   let interiorTourLevel = new Level_InteriorTour(engineManager.engine)
+  engineManager.CloseLevel(exteriorLevel)
   engineManager.OpenLevel(interiorTourLevel)
-  interiorTourLevel.LoadType("A")
+  interiorTourLevel.LoadType(type)
 }
 
 //expose methods
