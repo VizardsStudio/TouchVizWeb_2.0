@@ -10,14 +10,13 @@
   <TopBar :time="time" @update:time="onTimeChange" :showTime="showTime" />
   <FilterPanel v-model:filtering="filtering" v-model:areaMin="areaMin" v-model:areaMax="areaMax"
     v-model:floorMin="floorMin" v-model:floorMax="floorMax" v-model:bedMin="bedMin" v-model:bedMax="bedMax" />
-  <UnitWidget v-if="unitSelected" :unit="unit" :unitSelected="unitSelected" @close="unitSelected = false" />
   <BottomNav ref="bottomNav" :activeTab="activeTab" @update:activeTab="activeTab = $event"
     @toggleFilter="toggleFilter" />
   <Transition name="fade">
     <PopupPromp :visible="showInitUnit" :message="welcomeMessage" @yes="onConfirm" @no="onCancel" />
   </Transition>
   <Transition name="fade" v-if="selectedApartmentUnit">
-    <UnitDetails :apartmentUnit="selectedApartmentUnit" ref="unitDetailsRef" />
+    <UnitDetails :apartmentUnit="selectedApartmentUnit" @open-tour="onInteriorTour" ref="unitDetailsRef" />
   </Transition>
 </template>
 
@@ -28,7 +27,6 @@ import ImageViewerCanvas from './components/ImageViewerCanvas.vue'
 import pdfViewer from './components/pdfViewer.vue'
 import TopBar from './components/TopBar.vue'
 import FilterPanel from './components/FilterPanel.vue'
-import UnitWidget from './components/UnitWidget.vue'
 import BottomNav from './components/BottomNav.vue'
 import "./style.css"
 import PdfViewer from './components/pdfViewer.vue'
@@ -128,6 +126,12 @@ function onConfirm() {
 function onCancel() {
   console.log("User clicked NO")
   showInitUnit.value = false
+}
+
+function onInteriorTour(){
+  unitDetailsRef.value.togglePanel()
+  console.log("interior tour clicked")
+  babylonCanvas.value.OpenInteriorTourLevel("A")
 }
 
 watch(activeTab, async (newTab, oldTab) => {

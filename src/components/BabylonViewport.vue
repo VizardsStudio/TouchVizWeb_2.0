@@ -6,6 +6,7 @@
 import { onMounted, ref } from 'vue'
 import { EngineManager } from '../core/EngineManager'
 import { LevelExterior } from '../levels/exterior'
+import { Level_InteriorTour } from '../levels/InteriorTourLevel'
 
 const renderCanvas = ref<HTMLCanvasElement | null>(null)
 let engineManager:EngineManager | null = null
@@ -27,14 +28,19 @@ onMounted(() => {
 })
 
 function OpenExteriorLevel(){
-  console.log("the function is being called!!!")
   if(!engineManager) return
   exteriorLevel = new LevelExterior(engineManager.engine)
   engineManager.OpenLevel(exteriorLevel)
 }
+function OpenInteriorTourLevel(type:string){
+  if(!engineManager) return
+  let interiorTourLevel = new Level_InteriorTour(engineManager.engine)
+  engineManager.OpenLevel(interiorTourLevel)
+  interiorTourLevel.LoadType("A")
+}
 
 //expose methods
-defineExpose({OpenExteriorLevel})
+defineExpose({OpenExteriorLevel, OpenInteriorTourLevel})
 
 </script>
 

@@ -1,0 +1,159 @@
+{
+    "projectName": "Burj Nawas",
+    "types": [
+        {
+            "typeName": "A",
+            "interiorTours": {
+                "interiorName": "",
+                "tours": [
+                    {
+                        "index": 0,
+                        "panoPath": "/assets/Types/A/Interiors/InteriorTours/0.jpg",
+                        "position": {
+                            "x": 4.420000076293945,
+                            "y": 0.0,
+                            "z": -1.309999942779541
+                        },
+                        "visible": []
+                    },
+                    {
+                        "index": 1,
+                        "panoPath": "/assets/Types/A/Interiors/InteriorTours/1.jpg",
+                        "position": {
+                            "x": 5.25,
+                            "y": 0.0,
+                            "z": -3.0399999618530275
+                        },
+                        "visible": []
+                    },
+                    {
+                        "index": 2,
+                        "panoPath": "/assets/Types/A/Interiors/InteriorTours/2.jpg",
+                        "position": {
+                            "x": 7.340000152587891,
+                            "y": 0.0,
+                            "z": -5.559999942779541
+                        },
+                        "visible": []
+                    },
+                    {
+                        "index": 3,
+                        "panoPath": "/assets/Types/A/Interiors/InteriorTours/3.jpg",
+                        "position": {
+                            "x": 10.529999732971192,
+                            "y": 0.0,
+                            "z": -2.869999885559082
+                        },
+                        "visible": []
+                    },
+                    {
+                        "index": 4,
+                        "panoPath": "/assets/Types/A/Interiors/InteriorTours/4.jpg",
+                        "position": {
+                            "x": 11.65999984741211,
+                            "y": 0.0,
+                            "z": -1.0199999809265137
+                        },
+                        "visible": []
+                    }
+                ]
+            },
+            "Plans3d": {
+                "glbPath": ""
+            }
+        },
+        {
+            "typeName": "B",
+            "interiorTours": {
+                "interiorName": "",
+                "tours": [
+                    {
+                        "index": 0,
+                        "panoPath": "/assets/Types/B/Interiors/InteriorTours/0.jpg",
+                        "position": {
+                            "x": 5.25,
+                            "y": 0.0,
+                            "z": -3.0399999618530275
+                        },
+                        "visible": []
+                    },
+                    {
+                        "index": 1,
+                        "panoPath": "/assets/Types/B/Interiors/InteriorTours/1.jpg",
+                        "position": {
+                            "x": 9.960000038146973,
+                            "y": 0.0,
+                            "z": 0.7400000095367432
+                        },
+                        "visible": []
+                    },
+                    {
+                        "index": 2,
+                        "panoPath": "/assets/Types/B/Interiors/InteriorTours/2.jpg",
+                        "position": {
+                            "x": 14.84000015258789,
+                            "y": 0.0,
+                            "z": -3.0399999618530275
+                        },
+                        "visible": []
+                    }
+                ]
+            },
+            "Plans3d": {
+                "glbPath": ""
+            }
+        },
+        {
+            "typeName": "C",
+            "interiorTours": {
+                "interiorName": "",
+                "tours": [
+                    {
+                        "index": 0,
+                        "panoPath": "/assets/Types/C/Interiors/InteriorTours/0.jpg",
+                        "position": {
+                            "x": 5.25,
+                            "y": 0.0,
+                            "z": -3.0399999618530275
+                        },
+                        "visible": []
+                    },
+                    {
+                        "index": 1,
+                        "panoPath": "/assets/Types/C/Interiors/InteriorTours/1.jpg",
+                        "position": {
+                            "x": 10.529999732971192,
+                            "y": 0.0,
+                            "z": -6.760000228881836
+                        },
+                        "visible": []
+                    }
+                ]
+            },
+            "Plans3d": {
+                "glbPath": ""
+            }
+        },
+        {
+            "typeName": "D",
+            "interiorTours": {
+                "interiorName": "",
+                "tours": [
+                    {
+                        "index": 0,
+                        "panoPath": "/assets/Types/D/Interiors/InteriorTours/0.jpg",
+                        "position": {
+                            "x": 10.399999618530274,
+                            "y": 0.0,
+                            "z": -10.630000114440918
+                        },
+                        "visible": []
+                    }
+                ]
+            },
+            "Plans3d": {
+                "glbPath": ""
+            }
+        }
+    ]
+}
