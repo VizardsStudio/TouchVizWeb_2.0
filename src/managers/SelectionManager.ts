@@ -31,16 +31,14 @@ export class SelectionManager {
     };
 
     this.scene.onPointerUp = (evt, pickInfo) => {
-      if (!this._downPickMesh || !this._downPointerPos) return;
-
-      // ✅ 1. Check movement distance — ignore if it's a drag
-      const dx = evt.clientX - this._downPointerPos.x;
-      const dy = evt.clientY - this._downPointerPos.y;
+      // Ignore if moved too much (drag)
+      const dx = this._downPointerPos ? evt.clientX - this._downPointerPos.x : 0;
+      const dy = this._downPointerPos ? evt.clientY - this._downPointerPos.y : 0;
       const movedTooMuch = Math.sqrt(dx * dx + dy * dy) > this._moveThreshold;
       if (movedTooMuch) return;
 
-      // ✅ 2. Must release on the same mesh
-      if (pickInfo.hit && pickInfo.pickedMesh === this._downPickMesh) {
+      // Only select if the pointer went down and up on the same mesh
+      if (pickInfo.hit && pickInfo.pickedMesh && pickInfo.pickedMesh === this._downPickMesh) {
         const actor = this.actorManager
           .GetAllActors()
           .find(
@@ -49,15 +47,26 @@ export class SelectionManager {
           ) as UnitActor;
 
         if (actor) {
-          console.log(`${actor.name}: ${actor.props.status}`);
           this.SelectUnit(actor);
         }
+      } else {
+        // Clicked empty space or released on a different mesh → deselect
+        this.DeselectUnit();
       }
 
       // Reset
       this._downPickMesh = null;
       this._downPointerPos = null;
     };
+
+
+
+  }
+  DeselectUnit() {
+    console.log("deselect");
+    eventBus.dispatchEvent(
+      new CustomEvent("deselected")
+    );
   }
 
   private SelectUnit(unit: UnitActor) {

@@ -164,7 +164,6 @@ export class LevelExterior extends LevelBase {
             .forEach(actor => {
                 actor.applyVisibility(filters);
             });
-        console.log(filters);
     }
 
     public CreateAnimatedMaterial(name: string, color: Color3): StandardMaterial {

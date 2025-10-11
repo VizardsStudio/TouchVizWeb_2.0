@@ -115,7 +115,7 @@ const emitFilterCriteria = debounce(() => {
   eventBus.dispatchEvent(
     new CustomEvent('filterUpdated', { detail: buildFilterCriteria() })
   )
-}, 200) // 200ms retriggerable
+}, 10) // 200ms retriggerable
 
 // ------------------- Watchers -------------------
 // Emit slider changes with debounce
@@ -184,11 +184,11 @@ watch(() => [props.bedMin, props.bedMax], ([min, max]) => bedRange.value = [min,
   width: 90%;
   max-width: 480px;
   max-height: 60%;
-  background: rgba(0, 0, 0, 0.85);
+  background: rgba(72, 72, 72, 0.7);
   padding: 1.5rem;
   border-radius: 20px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(2px);
   overflow: scroll;
   opacity: 0;
   pointer-events: none;
@@ -203,7 +203,7 @@ watch(() => [props.bedMin, props.bedMax], ([min, max]) => bedRange.value = [min,
 }
 
 .filter-panel.active {
-  opacity: 1;
+  opacity: 0.9;
   pointer-events: auto;
   visibility: visible;
   transform: translateX(-50%) translateY(0);

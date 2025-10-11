@@ -196,6 +196,7 @@ onMounted(() => {
     bedrooms: 0
   }
   eventBus.addEventListener("unitSelected", HandleUnitSelection as EventListener)
+  eventBus.addEventListener("deselected", HandleUnitDeselect as EventListener)
 })
 
 onBeforeUnmount(() => { })
@@ -203,6 +204,10 @@ onBeforeUnmount(() => { })
 function HandleUnitSelection(event: CustomEvent) {
   selectedApartmentUnit.value = event.detail
   unitDetailsRef.value.openPanel();
+}
+function HandleUnitDeselect(event: CustomEvent) {
+  filtering.value = false;
+  unitDetailsRef.value.closePanel();
 }
 </script>
 
