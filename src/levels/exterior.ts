@@ -69,13 +69,12 @@ export class LevelExterior extends LevelBase {
 
         //load and import other 3d models
         const meshes: AbstractMesh[] = [];
-        SceneLoader.ImportMeshAsync("", "assets/gltf/exterior/3dModels/", "tower LOD 0.glb", this.scene).then((result) => { this.SetMaterial(result.meshes, matSolid); meshes.concat(result.meshes) });
+        SceneLoader.ImportMeshAsync("", "assets/gltf/exterior/3dModels/", "solid.glb", this.scene).then((result) => { this.SetMaterial(result.meshes, matSolid); meshes.concat(result.meshes) });
         SceneLoader.ImportMeshAsync("", "assets/gltf/exterior/3dModels/", "context.glb", this.scene).then((result) => { this.SetMaterial(result.meshes, matContext); meshes.concat(result.meshes) });
         SceneLoader.ImportMeshAsync("", "assets/gltf/exterior/3dModels/", "glass.glb", this.scene).then((result) => this.SetMaterial(result.meshes, matGlass));
         SceneLoader.ImportMeshAsync("", "assets/gltf/exterior/3dModels/", "greens.glb", this.scene).then((result) => this.SetMaterial(result.meshes, matGreen));
         SceneLoader.ImportMeshAsync("", "assets/gltf/exterior/3dModels/", "roads.glb", this.scene).then((result) => this.SetMaterial(result.meshes, matRoad));
         SceneLoader.ImportMeshAsync("", "assets/gltf/exterior/3dModels/", "water.glb", this.scene).then((result) => this.SetMaterial(result.meshes, matWater));
-        SceneLoader.ImportMeshAsync("", "assets/gltf/exterior/3dModels/", "dome.glb", this.scene).then((result) => this.SetMaterial(result.meshes, matSolid));
 
         //reposition the camera
         this.camera.target.x = -23.5;
