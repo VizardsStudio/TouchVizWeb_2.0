@@ -8,6 +8,8 @@ import { EngineManager } from "../core/EngineManager";
 import { SelectionManager } from "../managers/SelectionManager";
 import { unitManager } from "../managers/UnitManager";
 import type { ApartmentProperties } from "../types/apartment";
+import type { FilterCriteria } from "../types/filteringCriteria";
+import { eventBus } from "../core/eventBus";
 
 
 
@@ -66,6 +68,12 @@ export class LevelExterior extends LevelBase {
         matGold.metallic = 1;
         matGold.albedoColor = new Color3(0.729, 0.529, 0.298);
         matGold.roughness = 0.05;
+
+        //listening for filtering
+        eventBus.addEventListener('filterUpdated', (event: Event) => {
+            const criteria = (event as CustomEvent).detail
+            this.filterUnits(criteria);
+        })
 
         //load and import other 3d models
         const meshes: AbstractMesh[] = [];
@@ -148,6 +156,15 @@ export class LevelExterior extends LevelBase {
             console.error("❌ Failed to apply material to meshes:", error);
         }
 
+    }
+
+    filterUnits(filters: FilterCriteria) {
+        this.actorManager.GetAllActors()
+            .filter(actor => actor instanceof UnitActor) // ✅ only MeshActor and subclasses
+            .forEach(actor => {
+                actor.applyVisibility(filters);
+            });
+        console.log(filters);
     }
 
     public CreateAnimatedMaterial(name: string, color: Color3): StandardMaterial {

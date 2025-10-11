@@ -53,7 +53,7 @@ const unit = ref({ name: 'A-302', area: 125, floor: 12, bedrooms: 3 })
 const imageViewerRef = ref<InstanceType<typeof ImageViewerCanvas> | null>(null)
 const babylonCanvas = ref<InstanceType<typeof BabylonViewport> | null>(null)
 const bottomNav = ref<InstanceType<typeof BottomNav> | null>(null)
-const unitDetailsRef = ref<InstanceType<typeof UnitDetails> | null> (null)
+const unitDetailsRef = ref<InstanceType<typeof UnitDetails> | null>(null)
 
 //url queries
 const urlQueryName = ref("")
@@ -63,12 +63,12 @@ const welcomeMessage = computed(() => `Welcome dear ${urlQueryName.value}, would
 const selectedApartmentUnit = ref<ApartmentProperties | null>(null)
 
 //filtering input
-const areaMin = ref(80)
-const areaMax = ref(250)
+const areaMin = ref(110)
+const areaMax = ref(570)
 const floorMin = ref(1)
-const floorMax = ref(20)
+const floorMax = ref(50)
 const bedMin = ref(1)
-const bedMax = ref(4)
+const bedMax = ref(7)
 
 // ===== Methods =====
 function toggleFilter() {
@@ -128,7 +128,7 @@ function onCancel() {
   showInitUnit.value = false
 }
 
-function onInteriorTour(){
+function onInteriorTour() {
   unitDetailsRef.value.togglePanel()
   console.log("interior tour clicked")
   babylonCanvas.value.OpenInteriorTourLevel("A")
@@ -161,7 +161,7 @@ watch(activeTab, async (newTab, oldTab) => {
       showMap.value = false
       show2dViewport.value = false
       show3dViewport.value = true
-      await setTimeout(() => filtering.value = true,500)
+      await setTimeout(() => filtering.value = true, 500)
       break
     case 'surroundings':
       showMap.value = true
@@ -195,12 +195,12 @@ onMounted(() => {
     status: 'Available',
     bedrooms: 0
   }
-  eventBus.addEventListener("unitSelected",HandleUnitSelection as EventListener)
+  eventBus.addEventListener("unitSelected", HandleUnitSelection as EventListener)
 })
 
-onBeforeUnmount(() => {})
+onBeforeUnmount(() => { })
 
-function HandleUnitSelection(event:CustomEvent) {
+function HandleUnitSelection(event: CustomEvent) {
   selectedApartmentUnit.value = event.detail
   unitDetailsRef.value.openPanel();
 }

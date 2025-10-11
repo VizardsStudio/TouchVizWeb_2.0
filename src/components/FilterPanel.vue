@@ -3,59 +3,27 @@
     <!-- Floor -->
     <div class="filter-group">
       <label>Floor</label>
-      <VueSlider
-        v-model="floorRange"
-        :min="1"
-        :max="50"
-        range
-        :tooltip="'always'"
-        :dot-size="18"
-        :height="6"
-        @change="onRangeChange('floor', floorRange)"
-      />
+      <VueSlider v-model="floorRange" :min="1" :max="50" range :tooltip="'always'" :dot-size="18" :height="6" />
     </div>
 
     <!-- Area -->
     <div class="filter-group">
       <label>Area</label>
-      <VueSlider
-        v-model="areaRange"
-        :min="110"
-        :max="570"
-        range
-        :tooltip="'always'"
-        :dot-size="18"
-        :height="6"        
-        @change="onRangeChange('area', areaRange)"
-      />
+      <VueSlider v-model="areaRange" :min="110" :max="570" range :tooltip="'always'" :dot-size="18" :height="6" />
     </div>
 
     <!-- Bedrooms -->
     <div class="filter-group">
       <label>Bedrooms</label>
-      <VueSlider
-        v-model="bedRange"
-        :min="1"
-        :max="7"
-        range
-        :tooltip="'always'"
-        :dot-size="18"
-        :height="6"
-        @change="onRangeChange('bed', bedRange)"
-      />
+      <VueSlider v-model="bedRange" :min="1" :max="7" range :tooltip="'always'" :dot-size="18" :height="6" />
     </div>
 
     <!-- Typology -->
     <div class="filter-group small-section">
       <label>Typology</label>
       <div class="toggle-row">
-        <button
-          v-for="t in typologies"
-          :key="t"
-          class="toggle"
-          :class="{ active: selectedTypologies.includes(t) }"
-          @click="toggleTypology(t)"
-        >
+        <button v-for="t in typologies" :key="t" class="toggle" :class="{ active: selectedTypologies.includes(t) }"
+          @click="toggleTypology(t)">
           {{ t }}
         </button>
       </div>
@@ -65,13 +33,8 @@
     <div class="filter-group small-section">
       <label>View</label>
       <div class="toggle-row">
-        <button
-          v-for="v in views"
-          :key="v"
-          class="toggle"
-          :class="{ active: selectedViews.includes(v) }"
-          @click="toggleView(v)"
-        >
+        <button v-for="v in views" :key="v" class="toggle" :class="{ active: selectedViews.includes(v) }"
+          @click="toggleView(v)">
           {{ v }}
         </button>
       </div>
@@ -87,8 +50,11 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import VueSlider from 'vue-3-slider-component'
+import debounce from 'lodash.debounce'
+import { eventBus } from '../core/eventBus'
+import type { FilterCriteria } from '../types/filteringCriteria'
 
-// Props (unchanged)
+// Props
 const props = defineProps<{
   filtering: boolean
   areaMin: number
@@ -112,46 +78,60 @@ const emit = defineEmits<{
   (e: 'reset'): void
 }>()
 
-// Ranges
-const areaRange = ref<[number, number]>([110, 570])
-const floorRange = ref<[number, number]>([1, 50])
-const bedRange = ref<[number, number]>([1, 7])
+// ------------------- Filter State -------------------
 
-// Watch for prop changes
-watch(() => [props.areaMin, props.areaMax], ([min, max]) => areaRange.value = [min, max])
-watch(() => [props.floorMin, props.floorMax], ([min, max]) => floorRange.value = [min, max])
-watch(() => [props.bedMin, props.bedMax], ([min, max]) => bedRange.value = [min, max])
 
-// Emit range changes
-function onRangeChange(type: 'area' | 'floor' | 'bed', range: [number, number]) {
-  switch (type) {
-    case 'area':
-      emit('update:areaMin', range[0])
-      emit('update:areaMax', range[1])
-      break
-    case 'floor':
-      emit('update:floorMin', range[0])
-      emit('update:floorMax', range[1])
-      break
-    case 'bed':
-      emit('update:bedMin', range[0])
-      emit('update:bedMax', range[1])
-      break
+const typologies = ['Apartment', 'Duplex', 'Penthouse']
+const views = ['Dijlah View', 'City View']
+
+
+const selectedTypologies = ref<string[]>([...typologies])
+const selectedViews = ref<string[]>([...views])
+
+//---------------------- Defaults -----------------------------
+const DEFAULT_AREA: [number, number] = [110, 570]
+const DEFAULT_FLOOR: [number, number] = [1, 50]
+const DEFAULT_BEDROOMS: [number, number] = [1, 7]
+const areaRange = ref<[number, number]>([props.areaMin ?? DEFAULT_AREA[0], props.areaMax ?? DEFAULT_AREA[1]])
+const floorRange = ref<[number, number]>([props.floorMin ?? DEFAULT_FLOOR[0], props.floorMax ?? DEFAULT_FLOOR[1]])
+const bedRange = ref<[number, number]>([props.bedMin ?? DEFAULT_BEDROOMS[0], props.bedMax ?? DEFAULT_BEDROOMS[1]])
+
+
+
+
+// ------------------- Build FilterCriteria -------------------
+function buildFilterCriteria(): FilterCriteria {
+  return {
+    floorRange: [...floorRange.value],
+    areaRange: [...areaRange.value],
+    bedrooms: [...bedRange.value],
+    typology: [...selectedTypologies.value],
+    view: [...selectedViews.value],
   }
 }
 
-// Typology + View (mutually inclusive)
-const typologies = ['Apartment', 'Duplex', 'Penthouse']
-const views = ['Dijla', 'City']
+// Debounced filter emit for sliders
+const emitFilterCriteria = debounce(() => {
+  eventBus.dispatchEvent(
+    new CustomEvent('filterUpdated', { detail: buildFilterCriteria() })
+  )
+}, 200) // 200ms retriggerable
 
-const selectedTypologies = ref<string[]>([])
-const selectedViews = ref<string[]>([])
+// ------------------- Watchers -------------------
+// Emit slider changes with debounce
+watch([floorRange, areaRange, bedRange], () => {
+  emitFilterCriteria()
+}, { deep: true })
 
+// Emit immediate toggle changes
 function toggleTypology(t: string) {
   const idx = selectedTypologies.value.indexOf(t)
   if (idx === -1) selectedTypologies.value.push(t)
   else selectedTypologies.value.splice(idx, 1)
   emit('typology-change', selectedTypologies.value)
+  eventBus.dispatchEvent(
+    new CustomEvent('filterUpdated', { detail: buildFilterCriteria() })
+  )
 }
 
 function toggleView(v: string) {
@@ -159,24 +139,36 @@ function toggleView(v: string) {
   if (idx === -1) selectedViews.value.push(v)
   else selectedViews.value.splice(idx, 1)
   emit('view-change', selectedViews.value)
+  eventBus.dispatchEvent(
+    new CustomEvent('filterUpdated', { detail: buildFilterCriteria() })
+  )
 }
 
-// Reset
+// ------------------- Reset -------------------
 function resetAll() {
-  areaRange.value = [110, 570]
-  floorRange.value = [1, 50]
-  bedRange.value = [1, 7]
-  selectedTypologies.value = []
-  selectedViews.value = []
+  areaRange.value = [props.areaMin, props.areaMax]
+  floorRange.value = [props.floorMin, props.floorMax]
+  bedRange.value = [props.bedMin, props.bedMax]
 
-  onRangeChange('area', areaRange.value)
-  onRangeChange('floor', floorRange.value)
-  onRangeChange('bed', bedRange.value)
+  // Set toggles back to all options
+  selectedTypologies.value = [...typologies]
+  selectedViews.value = [...views]
 
-  emit('typology-change', [])
-  emit('view-change', [])
+  emit('typology-change', selectedTypologies.value)
+  emit('view-change', selectedViews.value)
   emit('reset')
+
+  // Trigger filter update immediately
+  eventBus.dispatchEvent(
+    new CustomEvent('filterUpdated', { detail: buildFilterCriteria() })
+  )
 }
+
+// ------------------- Sync props -------------------
+watch(() => [props.areaMin, props.areaMax], ([min, max]) => areaRange.value = [min, max])
+watch(() => [props.floorMin, props.floorMax], ([min, max]) => floorRange.value = [min, max])
+watch(() => [props.bedMin, props.bedMax], ([min, max]) => bedRange.value = [min, max])
+
 </script>
 
 <style>
@@ -205,9 +197,11 @@ function resetAll() {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
+
 .filter-panel::-webkit-scrollbar {
   display: none;
 }
+
 .filter-panel.active {
   opacity: 1;
   pointer-events: auto;
@@ -218,11 +212,13 @@ function resetAll() {
 .filter-group {
   margin-bottom: 1.2rem;
 }
+
 .filter-group label {
   display: block;
   font-size: 0.9rem;
   margin-bottom: 0.5rem;
 }
+
 .range-values {
   font-size: 0.8rem;
   display: flex;

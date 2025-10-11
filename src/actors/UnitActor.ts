@@ -83,15 +83,20 @@ export class UnitActor extends MeshActor {
       !filters.areaRange ||
       (p.area >= filters.areaRange[0] && p.area <= filters.areaRange[1])
 
-    // List inclusion checks
-    const typeOK = !filters.type || filters.type.includes(p.type)
-    const typologyOK = !filters.typology || filters.typology.includes(p.typology)
-    const viewOK = !filters.view || filters.view.includes(p.view)
-    const statusOK = !filters.status || filters.status.includes(p.status)
-    const bedroomsOK = !filters.bedrooms || filters.bedrooms.includes(p.bedrooms)
+    const bedroomsOK =
+      !filters.bedrooms ||
+      (p.bedrooms >= filters.bedrooms[0] && p.bedrooms <= filters.bedrooms[1])
 
-    return floorOK && areaOK && typeOK && typologyOK && viewOK && statusOK && bedroomsOK
+    // List inclusion checks
+    const typologyOK =
+      !filters.typology || filters.typology.includes(p.typology)
+
+    const viewOK =
+      !filters.view || filters.view.includes(p.view)
+
+    return floorOK && areaOK && bedroomsOK && typologyOK && viewOK
   }
+
 
   applyVisibility(filters: FilterCriteria) {
     this.meshes[0].isVisible = this.meetsCriteria(filters)
