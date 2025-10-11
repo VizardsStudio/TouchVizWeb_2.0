@@ -1,10 +1,10 @@
 export interface ApartmentProperties {
-    id:number
+    id: number
     type: string
     floor: number
     area: number
     typology: string
     view: string
-    status: 'Available' | 'Sold' | 'Reserved'
+    status: string
     bedrooms: number
 }

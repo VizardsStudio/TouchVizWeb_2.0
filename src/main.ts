@@ -2,15 +2,17 @@ import { createApp } from "vue";
 import App from "./App.vue";
 import "./style.css";
 import { fetchUnits } from "./core/fetchUnits";
+import { unitManager } from "./managers/UnitManager";
 
-createApp(App).mount("#app"); // lowercase id
-loadData();
-
-async function loadData() {
+async function startup() {
   try {
-    const units = await fetchUnits()
+    const units = await unitManager.load()
     console.log('✅ Loaded units:', units)
   } catch (err) {
-    console.error('❌ Error fetching units:', err)
+    console.error('❌ Error loading units:', err)
   }
+
+  createApp(App).mount('#app')
 }
+
+startup()

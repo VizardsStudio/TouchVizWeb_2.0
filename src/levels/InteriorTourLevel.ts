@@ -1,7 +1,7 @@
 import { MeshBuilder, StandardMaterial, Texture, Vector3, type Engine } from "babylonjs";
 import { LevelBase } from "../core/LevelBase";
 import { MeshActor } from "../actors/MeshActor";
-import { HotspotLoader } from "../core/HotspotManager";
+import { HotspotManager } from "../core/HotspotManager";
 export class Level_InteriorTour extends LevelBase {
     constructor(engine: Engine) {
         super(engine);
@@ -22,8 +22,8 @@ export class Level_InteriorTour extends LevelBase {
         this.camera.fov = 1;
     }
     public LoadType(type: string) {
-        const loader = new HotspotLoader(this.scene);
-        loader.LoadType(type)
+        const loader = new HotspotManager(this.actorManager, this.scene);
+        loader.loadHotspotsByTypeName(type);
     }
 
 }

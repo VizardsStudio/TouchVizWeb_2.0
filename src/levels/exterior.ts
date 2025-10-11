@@ -6,6 +6,9 @@ import { Actor } from "../actors/actor";
 import { GLTFFileLoader } from "babylonjs-loaders"
 import { EngineManager } from "../core/EngineManager";
 import { SelectionManager } from "../managers/SelectionManager";
+import { unitManager } from "../managers/UnitManager";
+import type { ApartmentProperties } from "../types/apartment";
+
 
 
 
@@ -33,7 +36,7 @@ export class LevelExterior extends LevelBase {
                 // Now you can loop through them cleanly
                 unitMeshes.forEach(mesh => {
                     if (mesh !== unitMeshes[0]) {
-                        const unitActor: UnitActor = this.actorManager.SpawnActor(UnitActor, `UnitActor_${mesh.name}`, Vector3.Zero());
+                        const unitActor: UnitActor = this.actorManager.SpawnActor(UnitActor, `Unit_${mesh.name}`, Vector3.Zero());
                         //unitActors.push(unitActor);
                         unitActor.AddMesh(mesh);
                         unitActor.matAvailable = this.matAvailable;
@@ -100,9 +103,32 @@ export class LevelExterior extends LevelBase {
         this.actorManager.GetAllActors()
             .filter(actor => actor instanceof UnitActor) // ✅ only MeshActor and subclasses
             .forEach(actor => {
-                actor.SetId(0);
+                const id = this.GetUnitId(actor.name)
+                //populating information from DB
+                //getting UnitObject
+                const unitObject = unitManager.getById(id);
+                actor.SetId(id);
+                actor.SetProps({
+                    id: id,
+                    type: unitObject.ApartmentType,
+                    floor: unitObject.ApartmentFloor,
+                    area: unitObject.ApartmentArea,
+                    typology: unitObject.ApartmentTypology,
+                    view: unitObject.ApartmentView,
+                    status: unitObject.ApartmentStatus,
+                    bedrooms: unitObject.ApartmentBedrooms
+                });
+
             });
     }
+
+    GetUnitId(name: string): number | null {
+        // match the last continuous run of digits in the string
+        const match = name.match(/(\d+)\s*$/);
+        return match ? parseInt(match[1], 10) : null;
+    }
+
+
     SetMaterial(meshes: AbstractMesh[], material: Material) {
         try {
             if (!meshes || meshes.length === 0) {
