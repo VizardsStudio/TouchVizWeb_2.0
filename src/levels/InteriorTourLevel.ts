@@ -11,6 +11,8 @@ export class Level_InteriorTour extends LevelBase {
     private skyMaterial: import("babylonjs").StandardMaterial | null = null;
     private hotspotOpenedHandler: ((e: Event) => void) | null = null;
     private isTransitioning: boolean = false;
+    // wheel handler added for FOV zoom (only for interior tour levels)
+    private _wheelHandler: ((e: WheelEvent) => void) | null = null;
 
     constructor(engine: Engine) {
         super(engine);
@@ -19,6 +21,34 @@ export class Level_InteriorTour extends LevelBase {
     protected SetupScene() {
         // camera
         this.camera.fov = 1;
+        // Remove default radius-based mousewheel zoom for this camera and add FOV-based zoom
+        try {
+            const attached = (this.camera.inputs as any).attached;
+            if (attached && attached.mousewheel) {
+                this.camera.inputs.remove(attached.mousewheel);
+            }
+        } catch (e) {
+            console.warn('[Level_InteriorTour] could not remove default mousewheel input', e);
+        }
+
+        // attach a wheel listener to the canvas to change fov (clamped)
+        try {
+            const canvas = this.scene.getEngine().getRenderingCanvas();
+            if (canvas) {
+                const minFov = 0.8;
+                const maxFov = 1.9;
+                const speed = 0.0015;
+                this._wheelHandler = (ev: WheelEvent) => {
+                    ev.preventDefault();
+                    const delta = ev.deltaY;
+                    const newFov = Math.max(minFov, Math.min(maxFov, this.camera.fov + delta * speed));
+                    this.camera.fov = newFov;
+                };
+                canvas.addEventListener('wheel', this._wheelHandler as EventListener, { passive: false });
+            }
+        } catch (e) {
+            console.warn('[Level_InteriorTour] failed to attach wheel listener', e);
+        }
         // Set scene background to white (r, g, b, a)
         this.scene.clearColor = new BABYLON.Color4(1, 1, 1, 1);
     }
@@ -129,6 +159,14 @@ export class Level_InteriorTour extends LevelBase {
                 try { eventBus.removeEventListener('interior:hotspot:opened', this.hotspotOpenedHandler as EventListener); } catch (e) { }
                 this.hotspotOpenedHandler = null;
             }
+            // remove wheel listener if added
+            try {
+                const canvas = this.scene.getEngine().getRenderingCanvas();
+                if (canvas && this._wheelHandler) {
+                    canvas.removeEventListener('wheel', this._wheelHandler as EventListener);
+                    this._wheelHandler = null;
+                }
+            } catch (e) { /* ignore */ }
             // dispose scene resources if needed. LevelBase's scene will be disposed by EngineManager.CloseLevel
             eventBus.dispatchEvent(new CustomEvent('interior:closed', { detail: { typeName: this.currentType } }));
         } catch (err) {

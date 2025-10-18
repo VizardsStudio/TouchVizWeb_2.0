@@ -5,7 +5,9 @@ import {
     Scene,
     StandardMaterial,
     Texture,
-    Vector3
+    Vector3,
+    Mesh,
+    AbstractMesh
 } from "babylonjs";
 import { ProjectDataManager } from "../managers/ProjectDataManager";
 import type { TypeData } from "../types/interiorTour";
@@ -15,7 +17,9 @@ import { eventBus } from "./eventBus";
 export class HotspotManager {
     private scene: Scene;
     private projectManager = ProjectDataManager.getInstance();
-    private createdMeshes: import("babylonjs").AbstractMesh[] = [];
+    private createdMeshes: AbstractMesh[] = [];
+    // store registered beforeRender observers so we can remove them on dispose
+    private beforeRenderObserverHandles: Array<{ mesh: AbstractMesh; fn: () => void }> = [];
 
     constructor(actorManager: ActorManager, scene: Scene) {
         this.scene = scene;
@@ -66,36 +70,83 @@ export class HotspotManager {
             try {
                 console.log(`[HotspotManager] Creating hotspot index ${hotspot.index} at position`, hotspot.position);
 
-                const sphere = MeshBuilder.CreateSphere(
+                // Create a plane that will always face the camera (billboard behavior)
+                const plane = MeshBuilder.CreatePlane(
                     `hotspot_${type.typeName}_${hotspot.index}`,
-                    { diameter: 0.5 },
+                    { size: 1 },
                     this.scene
                 );
-                this.createdMeshes.push(sphere);
-                sphere.position = new Vector3(hotspot.position.x, hotspot.position.y, hotspot.position.z);
+                this.createdMeshes.push(plane);
+                plane.position = new Vector3(hotspot.position.x, hotspot.position.y, hotspot.position.z);
 
-                if (hotspot.panoPath && hotspot.panoPath !== "No Texture found!") {
-                    const mat = new StandardMaterial(`mat_${type.typeName}_${hotspot.index}`, this.scene);
-                    mat.diffuseTexture = new Texture(
-                        hotspot.panoPath,
-                        this.scene,
-                        false,
-                        false,
-                        Texture.BILINEAR_SAMPLINGMODE,
-                        () => console.log(`[HotspotManager] Texture loaded for hotspot ${hotspot.index}`),
-                        (msg, ex) => console.error(`[HotspotManager] Failed to load texture for hotspot ${hotspot.index}:`, msg, ex)
-                    );
-                    sphere.material = mat;
-                } else {
-                    console.warn(`[HotspotManager] Hotspot ${hotspot.index} has no valid panoPath`);
+                // make the plane face the camera
+                // using billboardMode makes the mesh always face the active camera
+                // (value 7 matches BABYLON.Mesh.BILLBOARDMODE_ALL)
+                // but since we import Mesh above we can reference the constant
+                // however to avoid relying on enum values, use the property directly
+                // (TypeScript knows BILLBOARDMODE_ALL exists on AbstractMesh)
+                try {
+                    // @ts-ignore -- some BABYLON typings expose BILLBOARDMODE_* on Mesh
+                    (plane as any).billboardMode = Mesh.BILLBOARDMODE_ALL || 7;
+                } catch (e) {
+                    (plane as any).billboardMode = 7;
                 }
 
-                // Optional: click interaction
-                sphere.actionManager = new ActionManager(this.scene);
-                sphere.actionManager.registerAction(
+                // Apply hotspot PNG texture (separate small icon), fallback to a default small circle if none
+                const mat = new StandardMaterial(`mat_${type.typeName}_${hotspot.index}`, this.scene);
+                // hotspot data may not include a custom hotspot texture; fall back to a default icon
+                const hotspotTexturePath = (hotspot as any).hotspotTexture || '/assets/default_hotspot.png';
+                mat.diffuseTexture = new Texture(
+                    hotspotTexturePath,
+                    this.scene,
+                    false,
+                    false,
+                    Texture.TRILINEAR_SAMPLINGMODE,
+                    () => console.log(`[HotspotManager] Hotspot texture loaded for ${hotspot.index}`),
+                    (msg, ex) => console.error(`[HotspotManager] Failed to load hotspot texture for ${hotspot.index}:`, msg, ex)
+                );
+                // ensure the plane is rendered with transparency if PNG has alpha
+                try {
+                    // prefer setting the texture's hasAlpha flag if available
+                    if (mat.diffuseTexture) {
+                        (mat.diffuseTexture as any).hasAlpha = true;
+                    }
+                    mat.backFaceCulling = false;
+                } catch (e) {
+                    mat.backFaceCulling = false;
+                }
+                plane.material = mat;
+
+                // scale down to a comfortable clickable size
+                plane.scaling = new Vector3(0.6, 0.6, 0.6);
+
+                // Optional: pulsing scale animation via beforeRender observer
+                let pulseDirection = 1; // 1 = growing, -1 = shrinking
+                const baseScale = 0.3;
+                const pulseRange = 0.04; // how much to scale up/down
+                const pulseSpeed = 0.2; // how fast the pulse oscillates
+
+                const pulseFn = () => {
+                    try {
+                        const dt = (this.scene.getEngine().getDeltaTime() || 16) / 1000; // seconds
+                        const scaleChange = pulseDirection * pulseSpeed * dt * 0.5;
+                        const cur = plane.scaling.x;
+                        let next = cur + scaleChange;
+                        if (next > baseScale + pulseRange) { next = baseScale + pulseRange; pulseDirection = -1; }
+                        if (next < baseScale - pulseRange) { next = baseScale - pulseRange; pulseDirection = 1; }
+                        plane.scaling.set(next, next, next);
+                    } catch (e) {
+                        console.warn('[HotspotManager] pulseFn error', e);
+                    }
+                };
+                this.beforeRenderObserverHandles.push({ mesh: plane, fn: pulseFn });
+                this.scene.onBeforeRenderObservable.add(pulseFn);
+
+                // Click interaction
+                plane.actionManager = new ActionManager(this.scene);
+                plane.actionManager.registerAction(
                     new ExecuteCodeAction(ActionManager.OnPickTrigger, () => {
                         console.log(`Clicked hotspot: Type ${type.typeName}, Index ${hotspot.index}`);
-                        // Emit an event for UI and other systems to react
                         eventBus.dispatchEvent(new CustomEvent('interior:hotspot:opened', {
                             detail: {
                                 typeName: type.typeName,
@@ -106,7 +157,7 @@ export class HotspotManager {
                     })
                 );
 
-                console.log(`[HotspotManager] Hotspot ${hotspot.index} created successfully`);
+                console.log(`[HotspotManager] Hotspot ${hotspot.index} created successfully (plane)`);
             } catch (err) {
                 console.error(`[HotspotManager] Error creating hotspot index ${hotspot.index}:`, err);
             }
