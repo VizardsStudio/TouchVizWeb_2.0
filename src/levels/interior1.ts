@@ -19,6 +19,7 @@ export class Level_Interior1 extends LevelBase {
 
         //camera
         this.camera.fov = 1;
+        console.log("[Level_Interior1] Scene setup complete");
     }
 
 }

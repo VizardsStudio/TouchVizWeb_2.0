@@ -8,23 +8,44 @@ import {
     Vector3
 } from "babylonjs";
 import { ProjectDataManager } from "../managers/ProjectDataManager";
-import type { TypeData } from "../managers/ProjectDataManager"
+import type { TypeData } from "../types/interiorTour";
 import type { ActorManager } from "../managers/actorManager";
+import { eventBus } from "./eventBus";
 
 export class HotspotManager {
     private scene: Scene;
     private projectManager = ProjectDataManager.getInstance();
+    private createdMeshes: import("babylonjs").AbstractMesh[] = [];
 
     constructor(actorManager: ActorManager, scene: Scene) {
         this.scene = scene;
         console.log("[HotspotManager] Initialized with scene:", scene);
     }
 
-    /** Load hotspots for a type by name */
-    public loadHotspotsByTypeName(typeName: string) {
-        const type = this.projectManager.getType(typeName);
+    /** Load hotspots for a type by name. If project JSON isn't loaded, attempt to load it from /assets/project.json */
+    public async loadHotspotsByTypeName(typeName: string) {
+        let type = this.projectManager.getType(typeName);
         if (!type) {
-            console.error(`[HotspotManager] Type '${typeName}' not found in project data`);
+            console.warn(`[HotspotManager] Type '${typeName}' not found in project data. Checking if project data is loaded...`);
+            // Try to load default project JSON if manager has no data
+            if (!this.projectManager.getProjectData()) {
+                try {
+                    console.log('[HotspotManager] Project data not loaded, attempting to load /assets/project.json');
+                    // relative path from app root
+                    await this.projectManager.load('/assets/project.json');
+                } catch (err) {
+                    console.error('[HotspotManager] Failed to load project.json fallback:', err);
+                }
+            }
+
+            type = this.projectManager.getType(typeName);
+        }
+
+        if (!type) {
+            console.error(`[HotspotManager] Type '${typeName}' still not found after attempting to load project data`);
+            try {
+                eventBus.dispatchEvent(new CustomEvent('interior:error', { detail: { message: `Type '${typeName}' not found` } }));
+            } catch (e) { /* ignore */ }
             return;
         }
 
@@ -50,6 +71,7 @@ export class HotspotManager {
                     { diameter: 0.5 },
                     this.scene
                 );
+                this.createdMeshes.push(sphere);
                 sphere.position = new Vector3(hotspot.position.x, hotspot.position.y, hotspot.position.z);
 
                 if (hotspot.panoPath && hotspot.panoPath !== "No Texture found!") {
@@ -73,6 +95,14 @@ export class HotspotManager {
                 sphere.actionManager.registerAction(
                     new ExecuteCodeAction(ActionManager.OnPickTrigger, () => {
                         console.log(`Clicked hotspot: Type ${type.typeName}, Index ${hotspot.index}`);
+                        // Emit an event for UI and other systems to react
+                        eventBus.dispatchEvent(new CustomEvent('interior:hotspot:opened', {
+                            detail: {
+                                typeName: type.typeName,
+                                hotspotIndex: hotspot.index,
+                                panoPath: hotspot.panoPath
+                            }
+                        }));
                     })
                 );
 
@@ -83,5 +113,18 @@ export class HotspotManager {
         });
 
         console.log(`[HotspotManager] Finished loading type '${type.typeName}'`);
+    }
+
+    /** Dispose created hotspot meshes and handlers */
+    public Dispose() {
+        try {
+            this.createdMeshes.forEach(m => {
+                try { m.dispose(); } catch (e) { console.warn('[HotspotManager] mesh dispose failed', e); }
+            })
+            this.createdMeshes = [];
+            console.log('[HotspotManager] Disposed all hotspot meshes');
+        } catch (err) {
+            console.error('[HotspotManager] Error during dispose:', err);
+        }
     }
 }

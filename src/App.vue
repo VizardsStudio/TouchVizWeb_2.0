@@ -197,9 +197,19 @@ onMounted(() => {
   }
   eventBus.addEventListener("unitSelected", HandleUnitSelection as EventListener)
   eventBus.addEventListener("deselected", HandleUnitDeselect as EventListener)
+  // Close UI elements when an interior tour is loaded
+  eventBus.addEventListener("interior:loaded", HandleInteriorLoaded as EventListener)
 })
 
-onBeforeUnmount(() => { })
+onBeforeUnmount(() => {
+  try {
+    eventBus.removeEventListener("unitSelected", HandleUnitSelection as EventListener)
+    eventBus.removeEventListener("deselected", HandleUnitDeselect as EventListener)
+    eventBus.removeEventListener("interior:loaded", HandleInteriorLoaded as EventListener)
+  } catch (e) {
+    // ignore
+  }
+})
 
 function HandleUnitSelection(event: CustomEvent) {
   selectedApartmentUnit.value = event.detail
@@ -208,6 +218,13 @@ function HandleUnitSelection(event: CustomEvent) {
 function HandleUnitDeselect(event: CustomEvent) {
   filtering.value = false;
   unitDetailsRef.value.closePanel();
+}
+function HandleInteriorLoaded(event: CustomEvent) {
+  // When an interior tour opens, close the unit details panel and the filter panel
+  filtering.value = false
+  try {
+    unitDetailsRef.value?.closePanel()
+  } catch (e) { /* ignore */ }
 }
 </script>
 

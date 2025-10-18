@@ -1,31 +1,4 @@
-interface Position {
-    x: number;
-    y: number;
-    z: number;
-}
-
-interface HotSpotData {
-    index: number;
-    panoPath: string;
-    position: Position;
-    visible: number[];
-}
-
-interface InteriorTour {
-    interiorName: string;
-    tours: HotSpotData[];
-}
-
-export interface TypeData {
-    typeName: string;
-    interiorTours: InteriorTour;
-    Plans3d: { glbPath: string };
-}
-
-interface ProjectData {
-    projectName: string;
-    types: TypeData[];
-}
+import type { ProjectData, TypeData } from "../types/interiorTour";
 
 export class ProjectDataManager {
     private static instance: ProjectDataManager;
@@ -57,7 +30,18 @@ export class ProjectDataManager {
                 return null;
             }
 
-            const data: ProjectData = await response.json();
+            const raw: any = await response.json();
+            // Normalize shape: ensure types exist and interiorTours is optional
+            const data: ProjectData = {
+                projectName: raw.projectName || "",
+                types: Array.isArray(raw.types)
+                    ? raw.types.map((t: any) => ({
+                        typeName: t.typeName || t.name || "",
+                        interiorTours: t.interiorTours || t.InteriorTours || undefined,
+                        Plans3d: t.Plans3d || undefined
+                    }))
+                    : [],
+            };
             this.projectData = data;
             console.log("[ProjectDataManager] Project data loaded successfully");
             return data;
