@@ -17,7 +17,8 @@ export class LevelBase {
     }
 
     protected SetupScene() {
-
+        // Set scene background to white (r, g, b, a)
+        this.scene.clearColor = new BABYLON.Color4(1, 1, 1, 1); // RGB values (1 = full intensity)
     }
 
     private SetupCamera() {

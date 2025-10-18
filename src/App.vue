@@ -15,6 +15,8 @@
   <Transition name="fade">
     <PopupPromp :visible="showInitUnit" :message="welcomeMessage" @yes="onConfirm" @no="onCancel" />
   </Transition>
+  <!-- Transition overlay (white fade) - keep in DOM and toggle opacity via class for smooth transitions -->
+  <div :class="['transition-overlay', { 'is-visible': showTransitionOverlay }]" aria-hidden="true"></div>
   <Transition name="fade" v-if="selectedApartmentUnit">
     <UnitDetails :apartmentUnit="selectedApartmentUnit" @open-tour="onInteriorTour" ref="unitDetailsRef" />
   </Transition>
@@ -61,6 +63,7 @@ const urlQueryID = ref(-1)
 const showInitUnit = ref(false)
 const welcomeMessage = computed(() => `Welcome dear ${urlQueryName.value}, would you like to see your apartment?`)
 const selectedApartmentUnit = ref<ApartmentProperties | null>(null)
+const showTransitionOverlay = ref(false)
 
 //filtering input
 const areaMin = ref(110)
@@ -199,6 +202,8 @@ onMounted(() => {
   eventBus.addEventListener("deselected", HandleUnitDeselect as EventListener)
   // Close UI elements when an interior tour is loaded
   eventBus.addEventListener("interior:loaded", HandleInteriorLoaded as EventListener)
+  eventBus.addEventListener("interior:transition:start", HandleTransitionStart as EventListener)
+  eventBus.addEventListener("interior:transition:end", HandleTransitionEnd as EventListener)
 })
 
 onBeforeUnmount(() => {
@@ -206,6 +211,9 @@ onBeforeUnmount(() => {
     eventBus.removeEventListener("unitSelected", HandleUnitSelection as EventListener)
     eventBus.removeEventListener("deselected", HandleUnitDeselect as EventListener)
     eventBus.removeEventListener("interior:loaded", HandleInteriorLoaded as EventListener)
+    // remove transition listeners as well
+    try { eventBus.removeEventListener("interior:transition:start", HandleTransitionStart as EventListener) } catch (e) { }
+    try { eventBus.removeEventListener("interior:transition:end", HandleTransitionEnd as EventListener) } catch (e) { }
   } catch (e) {
     // ignore
   }
@@ -226,6 +234,14 @@ function HandleInteriorLoaded(event: CustomEvent) {
     unitDetailsRef.value?.closePanel()
   } catch (e) { /* ignore */ }
 }
+function HandleTransitionStart(event: CustomEvent) {
+  setTimeout(() => {
+    showTransitionOverlay.value = true
+  }, 500)
+}
+function HandleTransitionEnd(event: CustomEvent) {
+  showTransitionOverlay.value = false;
+}
 </script>
 
 <style>
@@ -238,6 +254,21 @@ function HandleInteriorLoaded(event: CustomEvent) {
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;
+}
+
+.transition-overlay {
+  position: absolute;
+  inset: 0;
+  background: white;
+  pointer-events: none;
+  opacity: 0;
+  /* start hidden */
+  transition: opacity 0.4s ease;
+}
+
+/* visible state toggled via class */
+.transition-overlay.is-visible {
+  opacity: 1;
 }
 
 .fade-enter-from,
