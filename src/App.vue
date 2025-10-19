@@ -18,7 +18,8 @@
   <!-- Transition overlay (white fade) - keep in DOM and toggle opacity via class for smooth transitions -->
   <div :class="['transition-overlay', { 'is-visible': showTransitionOverlay }]" aria-hidden="true"></div>
   <Transition name="fade" v-if="selectedApartmentUnit">
-    <UnitDetails :apartmentUnit="selectedApartmentUnit" @open-tour="onInteriorTour" ref="unitDetailsRef" />
+    <UnitDetails :apartmentUnit="selectedApartmentUnit" @open-tour="onInteriorTour" @open-3d="onOpen3D"
+      ref="unitDetailsRef" />
   </Transition>
 </template>
 
@@ -135,6 +136,26 @@ function onInteriorTour() {
   unitDetailsRef.value.togglePanel()
   console.log("interior tour clicked")
   babylonCanvas.value.OpenInteriorTourLevel("A")
+}
+
+function onOpen3D() {
+  // Close the details panel and show the 2D image viewer with the appropriate sequence
+  try { unitDetailsRef.value?.closePanel() } catch (e) { }
+
+  // Show image viewer (2D) and hide 3D viewport
+  show2dViewport.value = true
+  show3dViewport.value = false
+
+  // Derive a path for the 3D plans based on the selected unit type if possible.
+  // Fallback to the exterior orbit sequence if no plan folder is found.
+  const typeName = selectedApartmentUnit.value?.type || ''
+  const candidatePath = typeName ? `assets/Types/${typeName}/Interiors/3DPlan/` : ''
+  const fallback = 'assets/Orbits/Exterior/Day'
+
+  // Try to load the candidate sequence; caller (image viewer) should handle missing assets gracefully.
+  const pathToLoad = candidatePath || fallback
+  console.log("Loading 3D plans from: " + pathToLoad)
+  imageViewerRef.value?.ChangeImageSequence(pathToLoad)
 }
 
 watch(activeTab, async (newTab, oldTab) => {

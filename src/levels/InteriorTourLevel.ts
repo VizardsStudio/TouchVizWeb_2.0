@@ -18,6 +18,11 @@ export class Level_InteriorTour extends LevelBase {
         super(engine);
     }
 
+    /** Request exit from interior tour back to exterior. This dispatches a global event handled by BabylonViewport. */
+    public ExitTour() {
+        try { eventBus.dispatchEvent(new CustomEvent('interior:exit')); } catch (e) { }
+    }
+
     protected SetupScene() {
         // camera
         this.camera.fov = 1;
