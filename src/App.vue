@@ -135,7 +135,8 @@ function onCancel() {
 function onInteriorTour() {
   unitDetailsRef.value.togglePanel()
   console.log("interior tour clicked")
-  babylonCanvas.value.OpenInteriorTourLevel("A")
+  const typeName = selectedApartmentUnit.value?.type || ''
+  babylonCanvas.value.OpenInteriorTourLevel(typeName)
 }
 
 function onOpen3D() {
