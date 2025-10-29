@@ -17,14 +17,18 @@ import { eventBus } from "./eventBus";
 export class HotspotManager {
     private scene: Scene;
     private projectManager = ProjectDataManager.getInstance();
-    private createdMeshes: AbstractMesh[] = [];
+    public createdMeshes: AbstractMesh[] = [];
     // store registered beforeRender observers so we can remove them on dispose
     private beforeRenderObserverHandles: Array<{ mesh: AbstractMesh; fn: () => void }> = [];
+    public visibilityDict: { [key: number]: number[] } = {};
+    public selectedIndex: number = 0;
 
     constructor(actorManager: ActorManager, scene: Scene) {
         this.scene = scene;
         console.log("[HotspotManager] Initialized with scene:", scene);
     }
+
+
 
     /** Load hotspots for a type by name. If project JSON isn't loaded, attempt to load it from /assets/project.json */
     public async loadHotspotsByTypeName(typeName: string) {
@@ -78,6 +82,9 @@ export class HotspotManager {
                 );
                 this.createdMeshes.push(plane);
                 plane.position = new Vector3(hotspot.position.x, hotspot.position.y, hotspot.position.z);
+                this.visibilityDict[hotspot.index] = hotspot.visibleHotspots;
+                plane.metadata = { index: hotspot.index };
+
 
                 // make the plane face the camera
                 // using billboardMode makes the mesh always face the active camera
@@ -147,6 +154,17 @@ export class HotspotManager {
                 plane.actionManager.registerAction(
                     new ExecuteCodeAction(ActionManager.OnPickTrigger, () => {
                         console.log(`Clicked hotspot: Type ${type.typeName}, Index ${hotspot.index}`);
+                        this.selectedIndex = hotspot.index;
+                        //try hidding all hotspot meshes just to test
+                        console.log(this.visibilityDict);
+                        console.log("selected index:", this.selectedIndex);
+                        this.createdMeshes.forEach(mesh => {
+                            if (this.visibilityDict[this.selectedIndex].includes(mesh.metadata.index)) {
+                                mesh.isVisible = true;
+                            } else {
+                                mesh.isVisible = false;
+                            }
+                        });
                         eventBus.dispatchEvent(new CustomEvent('interior:hotspot:opened', {
                             detail: {
                                 typeName: type.typeName,
@@ -160,6 +178,14 @@ export class HotspotManager {
                 console.log(`[HotspotManager] Hotspot ${hotspot.index} created successfully (plane)`);
             } catch (err) {
                 console.error(`[HotspotManager] Error creating hotspot index ${hotspot.index}:`, err);
+            }
+        });
+
+        this.createdMeshes.forEach(mesh => {
+            if (this.visibilityDict[this.selectedIndex].includes(mesh.metadata.index)) {
+                mesh.isVisible = true;
+            } else {
+                mesh.isVisible = false;
             }
         });
 

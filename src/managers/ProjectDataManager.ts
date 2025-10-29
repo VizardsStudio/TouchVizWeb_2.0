@@ -38,7 +38,7 @@ export class ProjectDataManager {
                     ? raw.types.map((t: any) => ({
                         typeName: t.typeName || t.name || "",
                         interiorTours: t.interiorTours || t.InteriorTours || undefined,
-                        Plans3d: t.Plans3d || undefined
+                        Plans3d: t.Plans3d || undefined,
                     }))
                     : [],
             };

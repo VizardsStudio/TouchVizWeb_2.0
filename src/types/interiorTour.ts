@@ -4,23 +4,29 @@ export interface Position {
     z: number;
 }
 
-export interface HotSpotData {
+export interface Tour {
     index: number;
+    spaceName: string;
     panoPath: string;
     position: Position;
-    visible?: number[];
-    label?: string;
+    visibleHotspots: number[];
 }
 
-export interface InteriorTour {
+export interface InteriorTours {
     interiorName: string;
-    tours: HotSpotData[];
+    tours: Tour[];
+}
+
+export interface Plans3D {
+    isDuplex: boolean;
+    pathLvl1: string;
+    pathLvl2: string;
 }
 
 export interface TypeData {
     typeName: string;
-    interiorTours?: InteriorTour; // keep optional for backward compatibility
-    Plans3d?: { glbPath: string };
+    interiorTours?: InteriorTours;
+    Plans3d?: Plans3D;
 }
 
 export interface ProjectData {
