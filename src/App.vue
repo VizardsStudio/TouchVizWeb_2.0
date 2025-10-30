@@ -90,10 +90,10 @@ function toggleTime(newTime: 'day' | 'night') {
   console.log(newTime)
   if (newTime === 'night') {
     // Switch to night frames
-    imageViewerRef.value?.ChangeImageSequence('assets/Orbits/Exterior/Night')
+    imageViewerRef.value?.ChangeImageSequence('assets/Orbits/Exterior/Night', 'jpeg')
   } else {
     // Switch back to day frames
-    imageViewerRef.value?.ChangeImageSequence('assets/Orbits/Exterior/Day')
+    imageViewerRef.value?.ChangeImageSequence('assets/Orbits/Exterior/Day', 'jpeg')
   }
 }
 
@@ -156,7 +156,7 @@ function onOpen3D() {
   // Try to load the candidate sequence; caller (image viewer) should handle missing assets gracefully.
   const pathToLoad = candidatePath || fallback
   console.log("Loading 3D plans from: " + pathToLoad)
-  imageViewerRef.value?.ChangeImageSequence(pathToLoad)
+  imageViewerRef.value?.ChangeImageSequence(pathToLoad, 'webp')
 }
 
 watch(activeTab, async (newTab, oldTab) => {

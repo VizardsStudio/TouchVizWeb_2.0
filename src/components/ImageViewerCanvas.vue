@@ -88,9 +88,9 @@ function onPointerUp(e: PointerEvent) {
   handlePointerUp(e);
 }
 
-function ChangeImageSequence(path: string) {
+function ChangeImageSequence(path: string, extention:string) {
   console.log("changing to: " + path)
-  changeImageSequence(path);
+  changeImageSequence(path, extention);
 }
 
 //expose functions

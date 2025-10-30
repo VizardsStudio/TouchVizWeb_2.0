@@ -44,9 +44,11 @@ export function onProgress(cb: (loaded: number, total: number) => void) {
 
 // ---------------------- Path builder ----------------------
 let basePath = 'assets/Orbits/Exterior/Day';
-function frameUrl(i: number) {
+let ext = 'jpeg';
+function frameUrl(i: number, ext: string) {
     const idx = String(i).padStart(4, '0');
-    return `${basePath}/Exterior360_2.${idx}.jpeg`;
+    console.log(`${basePath}/${idx}.${ext}`);
+    return `${basePath}/${idx}.${ext}`;
 }
 
 // ---------------------- Public API ----------------------
@@ -163,7 +165,7 @@ export function onHostResize() {
  * Switch to a new basePath/sequence (e.g., Day -> Night).
  * Cancels any pending loads from previous sequence and restarts staged preload.
  */
-export async function changeImageSequence(newBasePath: string, startFrame: number = Math.round(currentFrameFloat)) {
+export async function changeImageSequence(newBasePath: string, extention: string, startFrame: number = Math.round(currentFrameFloat)) {
     if (!canvas) return;
 
     // Cancel previous loads
@@ -183,6 +185,7 @@ export async function changeImageSequence(newBasePath: string, startFrame: numbe
     currentFrameFloat = startFrame;
     targetFrame = startFrame;
     basePath = newBasePath;
+    ext = extention;
 
     // Stage 1: load and draw first frame immediately
     try {
@@ -291,7 +294,7 @@ async function loadFrame(i: number, signal: AbortSignal, generationId: number): 
 
     // Create a promise that will perform fetch -> blob -> createImageBitmap
     const loadPromise = (async () => {
-        const url = frameUrl(idx);
+        const url = frameUrl(idx, ext);
         // Fetch with abort support
         const res = await fetch(url, { signal });
         if (!res.ok) throw new Error(`Failed to fetch frame ${idx}: ${res.status}`);
