@@ -18,8 +18,8 @@
   <!-- Transition overlay (white fade) - keep in DOM and toggle opacity via class for smooth transitions -->
   <div :class="['transition-overlay', { 'is-visible': showTransitionOverlay }]" aria-hidden="true"></div>
   <Transition name="fade" v-if="selectedApartmentUnit">
-    <UnitDetails :apartmentUnit="selectedApartmentUnit" @open-tour="onInteriorTour" @open-3d="onOpen3D"
-      ref="unitDetailsRef" />
+    <UnitDetails :apartmentUnit="selectedApartmentUnit" :show-level-selector="showlvl" @open-tour="onInteriorTour"
+      @open-3d="onOpen3D" ref="unitDetailsRef" />
   </Transition>
 </template>
 
@@ -51,6 +51,7 @@ const filtering = ref(false)
 const showPdf = ref(false)
 const showTime = ref(true)
 const showMap = ref(false)
+const showlvl = ref(false)
 const unitSelected = ref(false)
 const unit = ref({ name: 'A-302', area: 125, floor: 12, bedrooms: 3 })
 const imageViewerRef = ref<InstanceType<typeof ImageViewerCanvas> | null>(null)
@@ -142,6 +143,8 @@ function onInteriorTour() {
 function onOpen3D() {
   // Close the details panel and show the 2D image viewer with the appropriate sequence
   try { unitDetailsRef.value?.closePanel() } catch (e) { }
+
+  activeTab.value = "home"
 
   // Show image viewer (2D) and hide 3D viewport
   show2dViewport.value = true
@@ -244,6 +247,12 @@ onBeforeUnmount(() => {
 function HandleUnitSelection(event: CustomEvent) {
   selectedApartmentUnit.value = event.detail
   unitDetailsRef.value.openPanel();
+  if (selectedApartmentUnit.value.typology === 'Duplex') {
+    console.warn("Duplex!")
+    showlvl.value = true
+  } else {
+    showlvl.value = false
+  }
 }
 function HandleUnitDeselect(event: CustomEvent) {
   filtering.value = false;
