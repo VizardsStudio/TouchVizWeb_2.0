@@ -6,6 +6,7 @@ export interface Position {
 
 export interface Tour {
     index: number;
+    isDuplexStartingPoint: boolean;
     spaceName: string;
     panoPath: string;
     position: Position;

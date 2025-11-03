@@ -38,6 +38,7 @@ import PopupPromp from './components/PopupPromp.vue'
 import UnitDetails from './components/UnitDetails.vue'
 import type { ApartmentProperties } from './types/apartment.ts'
 import { eventBus } from './core/eventBus.ts'
+import { useAppStore } from './Stores/AppStore.ts'
 
 
 
@@ -153,7 +154,10 @@ function onOpen3D() {
   // Derive a path for the 3D plans based on the selected unit type if possible.
   // Fallback to the exterior orbit sequence if no plan folder is found.
   const typeName = selectedApartmentUnit.value?.type || ''
-  const candidatePath = typeName ? `assets/Types/${typeName}/Interiors/Plans3D/Level1` : ''
+  let candidatePath = typeName ? `assets/Types/${typeName}/Interiors/Plans3D/Level1` : ''
+  if (useAppStore().duplexLevel === 2) {
+    candidatePath = typeName ? `assets/Types/${typeName}/Interiors/Plans3D/Level2` : ''
+  }
   const fallback = 'assets/Orbits/Exterior/Day'
 
   // Try to load the candidate sequence; caller (image viewer) should handle missing assets gracefully.

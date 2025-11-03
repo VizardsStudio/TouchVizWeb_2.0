@@ -8,6 +8,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useAppStore } from '../Stores/AppStore'
 
 const level = ref(1)
 
@@ -17,12 +18,14 @@ defineEmits(['first-action', 'second-action'])
 function selectFirstLevel() {
     if (level.value !== 1) {
         level.value = 1
+        useAppStore().setDuplexLevel(1)
     }
 }
 
 function selectSecondLevel() {
     if (level.value !== 2) {
         level.value = 2
+        useAppStore().setDuplexLevel(2)
     }
 }
 </script>

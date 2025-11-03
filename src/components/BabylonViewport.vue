@@ -10,6 +10,7 @@ import { EngineManager } from '../core/EngineManager'
 import { LevelExterior } from '../levels/exterior'
 import { Level_InteriorTour } from '../levels/InteriorTourLevel'
 import { eventBus } from '../core/eventBus'
+import { useAppStore } from '../Stores/AppStore'
 
 const renderCanvas = ref<HTMLCanvasElement | null>(null)
 let engineManager: EngineManager | null = null
@@ -47,7 +48,7 @@ function OpenInteriorTourLevel(type: string) {
   interiorLevel.value = new Level_InteriorTour(engineManager.engine)
   engineManager.CloseLevel(exteriorLevel)
   engineManager.OpenLevel(interiorLevel.value as any)
-  interiorLevel.value.LoadType(type)
+  interiorLevel.value.LoadType(type, useAppStore().duplexLevel)
 }
 
 function ExitInteriorTour() {

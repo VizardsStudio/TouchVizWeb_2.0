@@ -58,7 +58,7 @@ export class Level_InteriorTour extends LevelBase {
         this.scene.clearColor = new BABYLON.Color4(1, 1, 1, 1);
     }
 
-    public async LoadType(type: string) {
+    public async LoadType(type: string, duplexLevel: number = 1) {
         // Dispose any existing hotspots
         if (this.hotspotManager) {
             this.hotspotManager.Dispose();
@@ -84,11 +84,19 @@ export class Level_InteriorTour extends LevelBase {
             this.skyMaterial.disableLighting = true;
             this.skySphere.material = this.skyMaterial;
             this.skySphere.scaling = new Vector3(1, -1, 1);
+            let firstIndex = 0;
+
 
             // get the type data to pick the first panorama
             const projMgr = (await import("../managers/ProjectDataManager")).ProjectDataManager.getInstance();
             const typeData = projMgr.getType(type as string);
-            const firstPano = typeData?.interiorTours?.tours?.find(t => t.index === 0) || typeData?.interiorTours?.tours?.[0];
+            let firstPano = typeData?.interiorTours?.tours?.find(t => t.index === 0) || typeData?.interiorTours?.tours?.[0];
+            if (duplexLevel === 2) {
+                firstPano = typeData?.interiorTours?.tours?.find(t => t.isDuplexStartingPoint) || firstPano;
+                console.log("opening level 2 interior tour pano", firstPano);
+            } else {
+                console.log("opening level 1 interior tour pano", firstPano);
+            }
             if (firstPano && firstPano.panoPath) {
                 this.skyMaterial.emissiveTexture = new Texture(firstPano.panoPath, this.scene);
                 // position sky sphere and camera to first hotspot
