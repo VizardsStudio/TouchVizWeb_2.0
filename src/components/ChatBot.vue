@@ -15,11 +15,12 @@
                 </div>
 
                 <!-- Messages -->
-                <div class="chat-messages">
+                <div class="chat-messages" ref="messagesContainer">
                     <div v-for="(msg, index) in messages" :key="index"
                         :class="['message', msg.isUser ? 'user' : 'bot']">
                         {{ msg.text }}
                     </div>
+
                     <!-- Loading indicator -->
                     <div v-if="loading" class="message bot typing">
                         <span></span><span></span><span></span>
@@ -37,12 +38,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
 import { sendMessage } from "../core/ai_api";
 
 const isOpen = ref(false);
 const input = ref("");
-const messages = ref([{ text: "Hello! I'm your personal AI assistant ready to answer your questions about Burj Nawas. How can I help you today?", isUser: false }]);
+const messages = ref([
+    { text: "Hello! I'm your personal AI assistant ready to answer your questions about Burj Nawas. How can I help you today?", isUser: false }
+]);
 const loading = ref(false);
 
 const toggleChat = () => (isOpen.value = !isOpen.value);
@@ -59,9 +62,27 @@ onMounted(() => {
 onUnmounted(() => window.removeEventListener("resize", checkOrientation));
 
 // Dynamic window size
-const windowClass = computed(() =>
-    isPortrait.value ? "portrait" : "desktop"
-);
+const windowClass = computed(() => isPortrait.value ? "portrait" : "desktop");
+
+// Messages container ref
+const messagesContainer = ref<HTMLDivElement | null>(null);
+
+// Scroll to bottom function
+function scrollToBottom() {
+    nextTick(() => {
+        if (messagesContainer.value) {
+            messagesContainer.value.scrollTo({
+                top: messagesContainer.value.scrollHeight,
+                behavior: "smooth"
+            });
+        }
+    });
+}
+
+// Watch for new messages or loading changes to scroll
+watch([messages, loading], () => {
+    scrollToBottom();
+}, { deep: true });
 
 // Send message
 async function send() {
@@ -100,6 +121,7 @@ async function send() {
     }
 }
 </script>
+
 
 <style scoped>
 .chat-bot-container {
