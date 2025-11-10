@@ -1,5 +1,5 @@
 export async function sendMessage(message: string) {
-    const res = await fetch("http://localhost:3001/api/message", {
+    const res = await fetch("https://touchviz-agent-nawas-1.onrender.com/api/message", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message }),
