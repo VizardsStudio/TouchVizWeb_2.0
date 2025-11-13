@@ -1,7 +1,6 @@
 <template>
   <canvas id="renderCanvas" ref="renderCanvas"></canvas>
-  <!-- Exit button shown only when an interior tour is active -->
-  <button v-if="interiorLevel" @click="ExitInteriorTour" class="exit-tour-btn">Exit Tour</button>
+
 </template>
 
 <script setup lang="ts">
@@ -75,26 +74,5 @@ defineExpose({ OpenExteriorLevel, OpenInteriorTourLevel, ExitInteriorTour })
   position: absolute;
   width: 100%;
   height: 100%;
-}
-
-/* Exit tour button styling */
-.exit-tour-btn {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  z-index: 50;
-  background: rgba(0, 0, 0, 0.6);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 0.45rem 0.8rem;
-  border-radius: 8px;
-  cursor: pointer;
-  pointer-events: auto;
-  backdrop-filter: blur(6px);
-  font-size: 0.95rem;
-}
-
-.exit-tour-btn:hover {
-  background: rgba(0, 0, 0, 0.8);
 }
 </style>

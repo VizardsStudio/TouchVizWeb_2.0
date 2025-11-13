@@ -5,6 +5,9 @@
   <Transition name="fade">
     <PdfViewer pdfUrl="assets/detail.pdf" v-show="showPdf" />
   </Transition>
+  <!-- Exit button shown only when an interior tour is active -->
+  <button v-if="showExitBtnTour" @click="ExitInteriorTour" class="exit-tour-btn">Exit Tour</button>
+  <button v-if="showExitBtn3dPlan" @click="exit3DPlans" class="exit-tour-btn">Exit Tour</button>
   <ChatBot />
   <googleTranslate />
   <MapViewer v-show="showMap" />
@@ -56,6 +59,9 @@ const showPdf = ref(false)
 const showTime = ref(true)
 const showMap = ref(false)
 const showlvl = ref(false)
+const showExitBtn = ref(false)
+const showExitBtnTour = ref(false)
+const showExitBtn3dPlan = ref(false)
 const unitSelected = ref(false)
 const unit = ref({ name: 'A-302', area: 125, floor: 12, bedrooms: 3 })
 const imageViewerRef = ref<InstanceType<typeof ImageViewerCanvas> | null>(null)
@@ -86,10 +92,28 @@ function toggleFilter() {
 }
 
 function onTimeChange(newTime: 'day' | 'night') {
+  showTime.value = true
   time.value = newTime
   toggleTime(newTime)
 }
 
+function Exit() {
+  console.warn("Exit interior tour and 3d plans")
+  if (activeTab.value === 'filter') {
+    ExitInteriorTour()
+  } else if (activeTab.value === 'home') {
+    exit3DPlans()
+  }
+}
+
+function ExitInteriorTour() {
+  babylonCanvas.value?.ExitInteriorTour();
+  showExitBtnTour.value = false
+}
+function exit3DPlans() {
+  onTimeChange('day');
+  showExitBtn3dPlan.value = false
+}
 
 function toggleTime(newTime: 'day' | 'night') {
   console.log(newTime)
@@ -142,6 +166,8 @@ function onInteriorTour() {
   console.log("interior tour clicked")
   const typeName = selectedApartmentUnit.value?.type || ''
   babylonCanvas.value.OpenInteriorTourLevel(typeName)
+  showExitBtnTour.value = true
+  showTime.value = false
 }
 
 function onOpen3D() {
@@ -149,6 +175,10 @@ function onOpen3D() {
   try { unitDetailsRef.value?.closePanel() } catch (e) { }
 
   activeTab.value = "home"
+  showExitBtn3dPlan.value = true
+  setTimeout(() => {
+    showTime.value = false
+  }, 500)
 
   // Show image viewer (2D) and hide 3D viewport
   show2dViewport.value = true
@@ -183,6 +213,7 @@ watch(activeTab, async (newTab, oldTab) => {
       showMap.value = false
       show2dViewport.value = true
       show3dViewport.value = false
+      ExitInteriorTour()
       break
     case 'filter':
       //open exterior level
@@ -193,6 +224,7 @@ watch(activeTab, async (newTab, oldTab) => {
       showMap.value = false
       show2dViewport.value = false
       show3dViewport.value = true
+      exit3DPlans()
       await setTimeout(() => filtering.value = true, 500)
       break
     case 'surroundings':
@@ -314,5 +346,26 @@ function HandleTransitionEnd(event: CustomEvent) {
 .fade-enter-to,
 .fade-leave-from {
   opacity: 1;
+}
+
+/* Exit tour button styling */
+.exit-tour-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.45rem 0.8rem;
+  border-radius: 8px;
+  cursor: pointer;
+  pointer-events: auto;
+  backdrop-filter: blur(6px);
+  font-size: 0.95rem;
+}
+
+.exit-tour-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
 }
 </style>

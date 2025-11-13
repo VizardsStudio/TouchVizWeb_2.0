@@ -157,6 +157,12 @@ export class Level_InteriorTour extends LevelBase {
 
         // Notify UI and others that interior is loaded
         eventBus.dispatchEvent(new CustomEvent('interior:loaded', { detail: { typeName: type } }));
+        // clamp FOV for all inputs (wheel + pinch)
+        const minFov = 0.8;
+        const maxFov = 1.9;
+        this.camera.onViewMatrixChangedObservable.add(() => {
+            this.camera.fov = BABYLON.Scalar.Clamp(this.camera.fov, minFov, maxFov);
+        });
     }
 
     public async Close() {

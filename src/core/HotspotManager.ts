@@ -149,6 +149,31 @@ export class HotspotManager {
                 this.beforeRenderObserverHandles.push({ mesh: plane, fn: pulseFn });
                 this.scene.onBeforeRenderObservable.add(pulseFn);
 
+                //code snippet for keeping relative scale
+                const baseSize = 0.1; // your desired apparent size
+                const worldScale = new Vector3(1, 1, 1);
+
+                const updateScaleFn = () => {
+                    const cam = this.scene.activeCamera;
+                    if (!cam) return;
+
+                    // distance from camera to hotspot
+                    const dist = Vector3.Distance(cam.position, plane.position);
+
+                    // adjust for FOV so zooming in/out doesn’t affect visual size
+                    const fovFactor = Math.tan(cam.fov / 2);
+
+                    // tweak the multiplier below if they still look off
+                    const scale = baseSize * dist * fovFactor * 1.3;
+
+                    worldScale.set(scale, scale, scale);
+                    plane.scaling.copyFrom(worldScale);
+                };
+
+                // add to your beforeRender observer list so it cleans up properly
+                this.beforeRenderObserverHandles.push({ mesh: plane, fn: updateScaleFn });
+                this.scene.onBeforeRenderObservable.add(updateScaleFn);
+
                 // Click interaction
                 plane.actionManager = new ActionManager(this.scene);
                 plane.actionManager.registerAction(

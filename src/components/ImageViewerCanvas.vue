@@ -60,7 +60,7 @@ onMounted(() => {
     ctx.fillStyle = "black"; // any CSS color: hex, rgb, rgba, etc.
     ctx.fillRect(0, 0, imageCanvas.value.width, imageCanvas.value.height);
   }
-  initImageViewer(imageCanvas.value, 100); 
+  initImageViewer(imageCanvas.value, 100);
   //play initial animation
   //animateFrames(100,150,1000,1,0.5,0.5)
 
@@ -88,7 +88,7 @@ function onPointerUp(e: PointerEvent) {
   handlePointerUp(e);
 }
 
-function ChangeImageSequence(path: string, extention:string) {
+function ChangeImageSequence(path: string, extention: string) {
   console.log("changing to: " + path)
   changeImageSequence(path, extention);
 }
@@ -109,7 +109,6 @@ watch(isMoving, (newVal, oldVal) => {
 </script>
 
 <style scoped>
-
 .loadingWidget {
   position: absolute;
   left: 10px;
@@ -194,7 +193,7 @@ watch(isMoving, (newVal, oldVal) => {
   position: absolute;
   width: 10vw;
   height: 10vh;
-  background: url('src/swipe.png') no-repeat center center;
+  background: url('/assets/swipe.png') no-repeat center center;
   background-size: contain;
   opacity: 0;
   animation: swipe 2s ease-in-out 2;

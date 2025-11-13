@@ -2,7 +2,7 @@
     <div class="chat-bot-container">
         <!-- Collapsed Chat Icon -->
         <button v-if="!isOpen" @click="toggleChat" class="chat-toggle" aria-label="Open chat">
-            ֎🇦🇮
+            ?
         </button>
 
         <!-- Chat Window -->
@@ -93,6 +93,7 @@ async function send() {
         isUser: true,
         text: input.value.trim(),
     });
+    input.value = "";
 
     loading.value = true;
 
@@ -116,7 +117,6 @@ async function send() {
             text: "⚠️ Error: " + (err.message || "Something went wrong."),
         });
     } finally {
-        input.value = "";
         loading.value = false;
     }
 }
@@ -170,6 +170,7 @@ async function send() {
     position: fixed;
     bottom: 0;
     right: 0;
+    margin-bottom: 15px;
     background-color: #fff;
     border-radius: 16px 16px 0 0;
     display: flex;
