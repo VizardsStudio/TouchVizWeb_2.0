@@ -1,7 +1,7 @@
 <template>
   <div class="canvas-container">
-    <canvas ref="imageCanvas" class="image-canvas" @pointerdown="onPointerDown" @pointermove="onPointerMove"
-      @pointerup="onPointerUp">
+    <canvas ref="imageCanvas" class="image-canvas" :class="{ blurred: !AppStore.highResLoaded }"
+      @pointerdown="onPointerDown" @pointermove="onPointerMove" @pointerup="onPointerUp">
     </canvas>
     <div v-if="isLoading" class="loadingWidget">
       <div class="spinner"></div>
@@ -26,6 +26,7 @@ import {
   changeImageSequence,
   onProgress
 } from '../core/imageViewer';
+import { useAppStore } from '../Stores/AppStore';
 
 // Optional: configure basePath or preload radius before init
 // configure({ basePath: '/Orbits/Exterior/Day', preloadRadius: 40 });
@@ -34,6 +35,8 @@ const imageCanvas = ref<HTMLCanvasElement | null>(null);
 const isMoving = ref(false)
 const progressText = ref("Loading ")
 const isLoading = ref(true)
+
+const AppStore = useAppStore();
 
 // Forward resize to core
 function onResize() {
@@ -76,11 +79,13 @@ onBeforeUnmount(() => {
 // Vue-layer pointer handlers simply forward the event to the core
 function onPointerDown(e: PointerEvent) {
   isMoving.value = true;
+  AppStore.highResLoaded = false;
   handlePointerDown(e);
 }
 
 function onPointerMove(e: PointerEvent) {
   handlePointerMove(e);
+
 }
 
 function onPointerUp(e: PointerEvent) {
@@ -164,9 +169,12 @@ watch(isMoving, (newVal, oldVal) => {
   width: 100%;
   height: auto;
   cursor: grab;
-
+  transition: filter 0.3s ease;
 }
 
+.image-canvas.blurred {
+  filter: blur(5px);
+}
 
 /* portrait orientation */
 @media (orientation: portrait) {

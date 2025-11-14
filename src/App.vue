@@ -7,9 +7,8 @@
   </Transition>
   <!-- Exit button shown only when an interior tour is active -->
   <button v-if="showExitBtnTour" @click="ExitInteriorTour" class="exit-tour-btn">Exit Tour</button>
-  <button v-if="showExitBtn3dPlan" @click="exit3DPlans" class="exit-tour-btn">Exit Tour</button>
+  <button v-if="showExitBtn3dPlan" @click="exit3DPlans" class="exit-tour-btn">Exit 3D Plan</button>
   <ChatBot />
-  <googleTranslate />
   <MapViewer v-show="showMap" />
   <!-- UI Components -->
   <TopBar :time="time" @update:time="onTimeChange" :showTime="showTime" />
@@ -119,10 +118,10 @@ function toggleTime(newTime: 'day' | 'night') {
   console.log(newTime)
   if (newTime === 'night') {
     // Switch to night frames
-    imageViewerRef.value?.ChangeImageSequence('assets/Orbits/Exterior/Night', 'jpeg')
+    imageViewerRef.value?.ChangeImageSequence('assets/Orbits/Exterior/Night', 'webp')
   } else {
     // Switch back to day frames
-    imageViewerRef.value?.ChangeImageSequence('assets/Orbits/Exterior/Day', 'jpeg')
+    imageViewerRef.value?.ChangeImageSequence('assets/Orbits/Exterior/Day', 'webp')
   }
 }
 

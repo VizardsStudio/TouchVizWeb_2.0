@@ -2,9 +2,12 @@
 // Progressive staged 360 image viewer with robust cancellation/generation guards
 // Exports: configure, initImageViewer, destroyViewer, handlePointerDown, handlePointerMove,
 // handlePointerUp, setTargetFrame, onHostResize, changeImageSequence
+import { useAppStore } from "../Stores/AppStore";
 
 // ---------------------- Configurable parameters ----------------------
 let totalFrames = 180;
+let frameStep = 1; // 1 = load every frame, 2 = load every 2nd frame
+let logicalTotalFrames = totalFrames; // original full sequence
 let preloadRadius = 10;
 let maxCacheSize = totalFrames;
 
@@ -20,6 +23,7 @@ let targetFrame = 0;
 let startFrame = 0;
 
 let pointerDown = false;
+let highRes = false; // default low-res
 let startX = 0;
 
 let animationId: number | null = null;
@@ -27,6 +31,8 @@ let lastDrawnFrame = -1;
 
 // Cache stores ImageBitmap for efficient drawing
 const cache: Map<number, ImageBitmap> = new Map();
+const highResCache: Map<number, ImageBitmap> = new Map();
+
 
 // Decode queue (array of promises) to limit concurrency
 let decodeQueue: Promise<any>[] = [];
@@ -38,18 +44,62 @@ let currentGenerationId = 0;
 //------------------------- progress callbacks --------------------------------
 let progressCallback: ((loaded: number, total: number) => void) | null = null;
 
+setFrameStep(4); // initialize totalFrames based on frameStep
+
 export function onProgress(cb: (loaded: number, total: number) => void) {
     progressCallback = cb;
 }
 
 // ---------------------- Path builder ----------------------
 let basePath = 'assets/Orbits/Exterior/Day';
-let ext = 'jpeg';
+let ext = 'webp';
 function frameUrl(i: number, ext: string) {
-    const idx = String(i).padStart(4, '0');
-    console.log(`${basePath}/${idx}.${ext}`);
-    return `${basePath}/${idx}.${ext}`;
+    const actualIdx = i * frameStep; // map to original full sequence
+    const idx = String(actualIdx).padStart(4, '0');
+    const suffix = highRes ? '' : '_LD';
+    return `${basePath}/${idx}${suffix}.${ext}`;
 }
+
+async function loadHighResCurrentFrame() {
+    if (!canvas || highRes) return; // already high-res
+    highRes = true;
+    const store = useAppStore();
+    const frame = Math.round(currentFrameFloat) % totalFrames;
+    const generation = currentGenerationId;
+    const signal = currentAbortController?.signal ?? new AbortController().signal;
+
+
+    // Check high-res cache first
+    if (highResCache.has(frame)) {
+        drawImageCover(highResCache.get(frame)!);
+        lastDrawnFrame = frame;
+        store.setHighResLoaded(true); // ← notify Vue
+        return;
+    }
+
+    try {
+        // Temporarily ignore the low-res cache
+        const idx = frame * frameStep;
+        const url = `${basePath}/${String(idx).padStart(4, '0')}.${ext}`; // no _LD
+        const res = await fetch(url, { signal });
+        if (!res.ok) throw new Error(`Failed to fetch high-res frame ${frame}`);
+
+        const blob = await res.blob();
+        const bitmap = await createImageBitmap(blob);
+
+        // Save to high-res cache
+        highResCache.set(frame, bitmap);
+
+        drawImageCover(bitmap);
+        lastDrawnFrame = frame;
+
+        store.setHighResLoaded(true); // ← notify Vue
+    } catch {
+        // ignore errors
+    }
+}
+
+
 
 // ---------------------- Public API ----------------------
 export function configure(options: {
@@ -57,11 +107,19 @@ export function configure(options: {
     preloadRadius?: number;
     maxCacheSize?: number;
     basePath?: string;
+    frameStep?: number;
 }) {
-    if (typeof options.totalFrames === 'number') totalFrames = options.totalFrames;
+    if (typeof options.totalFrames === 'number') {
+        totalFrames = options.totalFrames;
+        logicalTotalFrames = totalFrames; // save original count
+    }
     if (typeof options.preloadRadius === 'number') preloadRadius = options.preloadRadius;
     if (typeof options.maxCacheSize === 'number') maxCacheSize = options.maxCacheSize;
     if (typeof options.basePath === 'string') basePath = options.basePath;
+    if (typeof options.frameStep === 'number') frameStep = Math.max(1, options.frameStep);
+
+    // Adjust totalFrames to reflect skipped frames
+    totalFrames = Math.ceil(logicalTotalFrames / frameStep);
 }
 
 /**
@@ -94,10 +152,12 @@ export async function initImageViewer(canvasEl: HTMLCanvasElement, initialFrame:
     }
     const img = cache.get(initialFrame);
     if (img) drawImageCover(img);
-
     // Kick off Stage 2 + 3 in background (non-blocking)
     stagedPreload(initialFrame, signal, generation).catch(() => { /* swallow */ });
-
+    loadHighResCurrentFrame().then(() => {
+        // Optional: reset highRes to false for normal drag frames
+        highRes = false;
+    });
     // Start render loop
     animationLoop();
 }
@@ -122,9 +182,13 @@ export function destroyViewer() {
 // Pointer handlers
 export function handlePointerDown(e: PointerEvent) {
     if (!canvas) return;
+    highResCache.forEach(b => b.close && b.close());
+    highResCache.clear();
+
     pointerDown = true;
     startX = e.clientX;
     startFrame = targetFrame;
+    highRes = false; // Reset to low-res for dragging
     try { canvas.setPointerCapture?.(e.pointerId); } catch { }
 }
 
@@ -146,6 +210,8 @@ export function handlePointerUp(e: PointerEvent) {
     pointerDown = false;
     if (!canvas) return;
     try { canvas.releasePointerCapture?.(e.pointerId); } catch { }
+    // Upgrade to high-res image for the final frame
+    loadHighResCurrentFrame();
 }
 
 /**
@@ -167,9 +233,10 @@ export function onHostResize() {
  */
 export async function changeImageSequence(newBasePath: string, extention: string, startFrame: number = Math.round(currentFrameFloat)) {
     if (!canvas) return;
-
+    highRes = false; // reset to low-res
     // Cancel previous loads
     if (currentAbortController) currentAbortController.abort();
+
 
     // New generation + controller
     currentGenerationId++;
@@ -180,6 +247,8 @@ export async function changeImageSequence(newBasePath: string, extention: string
     // Reset visual state
     cache.forEach(b => b.close && b.close());
     cache.clear();
+    highResCache.forEach(b => b.close && b.close());
+    highResCache.clear();
     decodeQueue = [];
 
     currentFrameFloat = startFrame;
@@ -187,16 +256,15 @@ export async function changeImageSequence(newBasePath: string, extention: string
     basePath = newBasePath;
     ext = extention;
 
-    // Stage 1: load and draw first frame immediately
+    // Stage 1: load and draw first frame immediately as high-res
     try {
-        await loadFrame(startFrame, signal, generation);
-    } catch (err) {
-        // swallow errors (e.g., abort)
-    }
-    const img = cache.get(startFrame);
+        await loadFrame(startFrame, signal, generation, true); // forceHighRes = true
+    } catch (err) { /* swallow */ }
+
+    const img = highResCache.get(startFrame) ?? cache.get(startFrame);
     if (img) {
         drawImageCover(img);
-        lastDrawnFrame = -1; // 🔁 Force next animation loop iteration to redraw too
+        lastDrawnFrame = -1;
     }
     // Kick off staged preload in background (auto-cancelled if switched again)
     stagedPreload(startFrame, signal, generation).catch(() => { /* swallow */ });
@@ -204,52 +272,39 @@ export async function changeImageSequence(newBasePath: string, extention: string
 
 // ---------------------- Internal: staged preload (sparse + progressive midpoint) ----------------------
 async function stagedPreload(initialFrame: number, signal: AbortSignal, generationId: number) {
-    // STAGE 2: sparse frames (fire-and-forget but respect generation/signal)
-    const step = getDynamicStep();
     const sparseFrames: number[] = [];
-    for (let i = 0; i < totalFrames; i += step) {
+    for (let i = 0; i < totalFrames; i++) { // already reduced by frameStep
         if (i !== initialFrame) sparseFrames.push(i);
     }
 
-    // Mark loadedFrames with initialFrame loaded already (if it is)
     const loadedFrames = new Set<number>();
     if (cache.has(initialFrame)) loadedFrames.add(initialFrame);
 
-    // Fire off sparse loads in parallel but non-blocking
     sparseFrames.forEach(f => {
         loadFrame(f, signal, generationId)
             .then(() => { if (generationId === currentGenerationId) loadedFrames.add(f); })
             .catch(() => { /* ignore */ });
     });
 
-    // Wait a short time to allow some sparse frames to complete and populate loadedFrames
-    // but do NOT block the UI. This gives the user immediate interactivity while sparse frames arrive.
     await delay(50);
     if (signal.aborted || generationId !== currentGenerationId) return;
 
-    // Ensure loadedFrames contains what cache has so far (in case some resolved quickly)
     for (const key of cache.keys()) loadedFrames.add(key);
 
-    // STAGE 3: progressive midpoint refinement that evenly fills gaps
-    // We'll loop until all frames are loaded or sequence/generation is canceled.
     while (loadedFrames.size < totalFrames) {
         if (signal.aborted || generationId !== currentGenerationId) return;
 
         const sorted = Array.from(loadedFrames).sort((a, b) => a - b);
-
-        // If nothing is currently loaded (rare but possible), include initialFrame and some sparse frames
         if (sorted.length === 0) {
-            // wait a bit for sparse frames to come in
             await delay(100);
             for (const key of cache.keys()) loadedFrames.add(key);
             continue;
         }
 
-        // Find midpoints for each gap, collect unique midpoints
         const newFrames: number[] = [];
         for (let i = 0; i < sorted.length; i++) {
             const start = sorted[i];
-            const end = sorted[(i + 1) % sorted.length]; // wrap
+            const end = sorted[(i + 1) % sorted.length];
             const gap = (end - start + totalFrames) % totalFrames;
             if (gap > 1) {
                 const midpoint = (start + Math.floor(gap / 2)) % totalFrames;
@@ -257,87 +312,73 @@ async function stagedPreload(initialFrame: number, signal: AbortSignal, generati
             }
         }
 
-        // if (newFrames.length === 0) {
-        //   // No more midpoints: maybe some remaining single-frame gaps — load them sequentially
-        //   for (let i = 0; i < totalFrames; i++) {
-        //     if (signal.aborted || generationId !== currentGenerationId) return;
-        //     if (!cache.has(i)) {
-        //       try { await loadFrame(i, signal, generationId); loadedFrames.add(i); } catch { }
-        //     }
-        //   }
-        //   return;
-        // }
-
-        // Load the newFrames in parallel but respect concurrency via loadFrame implementation
         await Promise.all(
             newFrames.map(f => loadFrame(f, signal, generationId).then(() => {
                 if (generationId === currentGenerationId) loadedFrames.add(f);
-            }).catch(() => { /* ignore */ }))
+            }).catch(() => { }))
         );
 
-        // Small pacing delay so we don't spam network/decoder on very fast networks
         await delay(20);
     }
 }
+
+export function setFrameStep(n: number) {
+    frameStep = Math.max(1, n);
+    totalFrames = Math.ceil(logicalTotalFrames / frameStep);
+}
+
 
 // ---------------------- Internal: loadFrame (fetch + createImageBitmap) ----------------------
 /**
  * Loads a frame index and stores it in cache as ImageBitmap.
  * Respects AbortSignal and generationId. Also enforces MAX_CONCURRENT_DECODE
  */
-async function loadFrame(i: number, signal: AbortSignal, generationId: number): Promise<ImageBitmap> {
-    // Abort quickly if the caller already cancelled
+async function loadFrame(i: number, signal: AbortSignal, generationId: number, forceHighRes = false): Promise<ImageBitmap> {
     if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
 
     const idx = ((i % totalFrames) + totalFrames) % totalFrames;
-    if (cache.has(idx)) return cache.get(idx)!;
 
-    // Create a promise that will perform fetch -> blob -> createImageBitmap
+    // Decide which cache & suffix to use
+    const useHighRes = forceHighRes || highRes;
+    const frameCache = useHighRes ? highResCache : cache;
+
+    if (frameCache.has(idx)) return frameCache.get(idx)!;
+
     const loadPromise = (async () => {
-        const url = frameUrl(idx, ext);
-        // Fetch with abort support
+        const actualIdx = idx * frameStep;
+        const suffix = useHighRes ? '' : '_LD';
+        const url = `${basePath}/${String(actualIdx).padStart(4, '0')}${suffix}.${ext}`;
+
         const res = await fetch(url, { signal });
-        if (!res.ok) throw new Error(`Failed to fetch frame ${idx}: ${res.status}`);
+        if (!res.ok) throw new Error(`Failed to fetch frame ${idx}`);
 
         const blob = await res.blob();
-
-        // createImageBitmap may be CPU heavy, so we treat it as a decode operation to throttle
         const bitmap = await createImageBitmap(blob);
         return bitmap;
     })();
 
-    // Add to decode queue and throttle if necessary
     decodeQueue.push(loadPromise);
     try {
         if (decodeQueue.length > MAX_CONCURRENT_DECODE) {
-            // Wait for any of the currently active decodes to finish before proceeding
             await Promise.race(decodeQueue);
         }
 
-        // Await this load (it might reject due to abort)
         const bitmap = await loadPromise;
 
-        // If this load belongs to a stale generation, discard result
         if (generationId !== currentGenerationId || signal.aborted) {
-            // close bitmap if possible
-            try { bitmap.close && bitmap.close(); } catch { /* ignore */ }
+            try { bitmap.close && bitmap.close(); } catch { }
             throw new DOMException('Aborted', 'AbortError');
         }
 
-        // Store into cache (evict if necessary)
-        cache.set(idx, bitmap);
+        frameCache.set(idx, bitmap);
         enforceCacheLimit();
-
         return bitmap;
     } finally {
-        // Remove this promise from decodeQueue when finished/failed
         decodeQueue = decodeQueue.filter(p => p !== loadPromise);
-        // report progress
-        if (progressCallback) {
-            progressCallback(cache.size, totalFrames);
-        }
+        if (progressCallback) progressCallback(cache.size, totalFrames);
     }
 }
+
 
 // ---------------------- Helpers ----------------------
 function getDynamicStep(): number {
