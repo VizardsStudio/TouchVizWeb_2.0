@@ -85,32 +85,72 @@ watch([messages, loading], () => {
 }, { deep: true });
 
 // Send message
-async function send() {
-    if (!input.value.trim()) return;
+// async function send() {
+//     const message = input.value.trim(); // capture before clearing
+//     if (!message) return;
 
-    // push user message
-    messages.value.push({
-        isUser: true,
-        text: input.value.trim(),
-    });
+//     // push user message
+//     messages.value.push({
+//         isUser: true,
+//         text: message,
+//     });
+//     input.value = ""; // now safe to clear
+
+//     loading.value = true;
+
+//     try {
+//         const res = await sendMessage(message); // send the actual user message
+
+//         // handle flexible response shape safely
+//         const responseText =
+//             res?.output_text ??
+//             res?.safe_text ??
+//             res?.message ??
+//             JSON.stringify(res, null, 2);
+
+//         messages.value.push({
+//             isUser: false,
+//             text: responseText,
+//         });
+//     } catch (err: any) {
+//         messages.value.push({
+//             isUser: false,
+//             text: "⚠️ Error: " + (err.message || "Something went wrong."),
+//         });
+//     } finally {
+//         loading.value = false;
+//     }
+// }
+
+
+async function send() {
+    const message = input.value.trim();
+    if (!message) return;
+
+    messages.value.push({ isUser: true, text: message });
     input.value = "";
 
     loading.value = true;
 
     try {
-        const res = await sendMessage(input.value);
+        // Keep last 5 exchanges (user + bot = 10 messages)
+        const maxExchanges = 5;
+        const recentMessages = messages.value.slice(-maxExchanges * 2);
 
-        // handle flexible response shape safely
+        // Combine messages into a single string with roles
+        const combinedMessage = recentMessages
+            .map(m => `${m.isUser ? "User" : "Assistant"}: ${m.text}`)
+            .join("\n");
+
+        const res = await sendMessage(combinedMessage);
+
         const responseText =
             res?.output_text ??
             res?.safe_text ??
             res?.message ??
             JSON.stringify(res, null, 2);
 
-        messages.value.push({
-            isUser: false,
-            text: responseText,
-        });
+        messages.value.push({ isUser: false, text: responseText });
     } catch (err: any) {
         messages.value.push({
             isUser: false,
@@ -120,6 +160,8 @@ async function send() {
         loading.value = false;
     }
 }
+
+
 </script>
 
 
