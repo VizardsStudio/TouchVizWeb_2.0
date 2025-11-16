@@ -173,7 +173,7 @@ watch(isMoving, (newVal, oldVal) => {
 }
 
 .image-canvas.blurred {
-  filter: blur(5px);
+  filter: blur(7px);
 }
 
 /* portrait orientation */
