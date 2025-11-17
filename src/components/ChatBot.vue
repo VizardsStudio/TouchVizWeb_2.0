@@ -172,6 +172,10 @@ async function send() {
     right: 20px;
     z-index: 1000;
     opacity: 95%;
+    overflow: hidden;
+    touch-action: none;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: auto;
 }
 
 /* ===== Animations ===== */
@@ -201,6 +205,10 @@ async function send() {
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
     transition: background-color 0.25s ease;
     z-index: 1000;
+    overflow: hidden;
+    touch-action: none;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: auto;
 }
 
 .chat-toggle:hover {
@@ -220,6 +228,10 @@ async function send() {
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
     overflow: hidden;
     z-index: 1000;
+    overflow: hidden;
+    touch-action: none;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: auto;
 }
 
 /* Desktop layout */
@@ -234,10 +246,15 @@ async function send() {
 /* Mobile layout */
 .chat-window.portrait {
     width: 95%;
-    height: 90%;
+    height: 50%;
+    top: 10%;
     left: 50%;
     transform: translateX(-50%);
     border-radius: 20px;
+    overflow: hidden;
+    touch-action: none;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: auto;
 }
 
 /* ===== Header ===== */

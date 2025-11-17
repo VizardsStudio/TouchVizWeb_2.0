@@ -9,6 +9,10 @@ body,
   touch-action: none;
   background: #111;
   color: #fff;
+  overflow: hidden;
+  touch-action: none;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: auto;
 }
 
 

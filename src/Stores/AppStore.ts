@@ -5,7 +5,7 @@ export const useAppStore = defineStore("app", {
         duplexLevel: 1,
         userName: "Guest",
         initialSelectedUnitId: -1,
-        highResLoaded: true,
+        highResLoaded: false,
     }),
     actions: {
         setDuplexLevel(level: number) {

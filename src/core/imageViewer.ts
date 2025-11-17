@@ -39,6 +39,7 @@ let decodeQueue: Promise<any>[] = [];
 
 // ---------------------- Cancellation / generation control ----------------------
 let currentAbortController: AbortController | null = null;
+let highResAbortController: AbortController | null = null;
 let currentGenerationId = 0;
 
 //------------------------- progress callbacks --------------------------------
@@ -61,43 +62,60 @@ function frameUrl(i: number, ext: string) {
 }
 
 async function loadHighResCurrentFrame() {
-    if (!canvas || highRes) return; // already high-res
+    if (!canvas) return;
+
+
+    // Cancel any previous high-res request
+    if (highResAbortController) {
+        highResAbortController.abort();
+    }
+
+    highResAbortController = new AbortController();
+    const signal = highResAbortController.signal;
+
     highRes = true;
     const store = useAppStore();
     const frame = Math.round(currentFrameFloat) % totalFrames;
-    const generation = currentGenerationId;
-    const signal = currentAbortController?.signal ?? new AbortController().signal;
 
-
-    // Check high-res cache first
+    // Check cache first
     if (highResCache.has(frame)) {
         drawImageCover(highResCache.get(frame)!);
         lastDrawnFrame = frame;
-        store.setHighResLoaded(true); // ← notify Vue
+        store.setHighResLoaded(true);
         return;
     }
 
     try {
-        // Temporarily ignore the low-res cache
         const idx = frame * frameStep;
-        const url = `${basePath}/${String(idx).padStart(4, '0')}.${ext}`; // no _LD
+        const url = `${basePath}/${String(idx).padStart(4, '0')}.${ext}`;
+
         const res = await fetch(url, { signal });
         if (!res.ok) throw new Error(`Failed to fetch high-res frame ${frame}`);
 
         const blob = await res.blob();
+        if (signal.aborted) return; // stop if aborted mid-way
+
         const bitmap = await createImageBitmap(blob);
 
-        // Save to high-res cache
-        highResCache.set(frame, bitmap);
+        if (signal.aborted) {
+            bitmap.close?.();
+            return;
+        }
 
+        highResCache.set(frame, bitmap);
+        console.log(`High-res frame ${frame} loaded`);
         drawImageCover(bitmap);
         lastDrawnFrame = frame;
-
-        store.setHighResLoaded(true); // ← notify Vue
-    } catch {
-        // ignore errors
+        store.setHighResLoaded(true);
+    } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") {
+            // expected cancellation, ignore
+        } else {
+            console.warn("High-res load failed", err);
+        }
     }
 }
+
 
 
 
@@ -182,20 +200,25 @@ export function destroyViewer() {
 // Pointer handlers
 export function handlePointerDown(e: PointerEvent) {
     if (!canvas) return;
-    highResCache.forEach(b => b.close && b.close());
+
+    // abort high-res loading on drag
+    if (highResAbortController) highResAbortController.abort();
+
+    highResCache.forEach(b => b.close?.());
     highResCache.clear();
 
     pointerDown = true;
     startX = e.clientX;
     startFrame = targetFrame;
-    highRes = false; // Reset to low-res for dragging
-    try { canvas.setPointerCapture?.(e.pointerId); } catch { }
+    highRes = false;
+    canvas.setPointerCapture?.(e.pointerId);
 }
+
 
 export function handlePointerMove(e: PointerEvent) {
     if (!pointerDown || !canvas) return;
     let deltaX = e.clientX - startX;
-    deltaX = deltaX * 0.25;
+    deltaX = deltaX * 0.5;
     const pixelsPerRotation = Math.max(1, canvas.clientWidth * 0.6);
     const maxFramesPerMove = totalFrames;
     const framesMoved = Math.max(
@@ -211,7 +234,10 @@ export function handlePointerUp(e: PointerEvent) {
     if (!canvas) return;
     try { canvas.releasePointerCapture?.(e.pointerId); } catch { }
     // Upgrade to high-res image for the final frame
-    loadHighResCurrentFrame();
+
+    setTimeout(() => {
+        loadHighResCurrentFrame();
+    }, 50);
 }
 
 /**
@@ -427,13 +453,30 @@ function animationLoop() {
 
     const frameIdx = Math.round((currentFrameFloat + totalFrames) % totalFrames);
 
+    // if (frameIdx !== lastDrawnFrame) {
+    //     const img = cache.get(frameIdx);
+    //     if (img) {
+    //         drawImageCover(img);
+    //         lastDrawnFrame = frameIdx;
+    //     } else {
+    //         // If frame not loaded yet, don't draw (keeps last image visible)
+    //     }
+    // }
+
     if (frameIdx !== lastDrawnFrame) {
-        const img = cache.get(frameIdx);
-        if (img) {
-            drawImageCover(img);
+        // Prefer high-res if available
+        const highImg = highResCache.get(frameIdx);
+        if (highImg) {
+            drawImageCover(highImg);
             lastDrawnFrame = frameIdx;
         } else {
-            // If frame not loaded yet, don't draw (keeps last image visible)
+            const lowImg = cache.get(frameIdx);
+            if (lowImg) {
+                drawImageCover(lowImg);
+                lastDrawnFrame = frameIdx;
+            } else {
+                // frame not loaded yet, keep last image visible
+            }
         }
     }
 
