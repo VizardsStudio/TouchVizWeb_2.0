@@ -1,7 +1,8 @@
 <template>
   <div class="canvas-container">
     <canvas ref="imageCanvas" class="image-canvas" :class="{ blurred: !AppStore.highResLoaded }"
-      @pointerdown="onPointerDown" @pointermove="onPointerMove" @pointerup="onPointerUp">
+      @pointerdown="onPointerDown" @pointermove="onPointerMove" @pointerup="onPointerUp" @touchstart="onTouchStart"
+      @touchmove="onTouchMove" @touchend="onTouchEnd">
     </canvas>
     <div v-if="isLoading" class="loadingWidget">
       <div class="spinner"></div>
@@ -37,6 +38,11 @@ const progressText = ref("Loading ")
 const isLoading = ref(true)
 
 const AppStore = useAppStore();
+
+//zoom variables 
+const scale = ref(1); // current zoom level
+let initialDistance = 0;
+let lastScale = 1;
 
 // Forward resize to core
 function onResize() {
@@ -76,22 +82,96 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', onResize);
 });
 
+let isOrbiting = ref(false);
+
 // Vue-layer pointer handlers simply forward the event to the core
 function onPointerDown(e: PointerEvent) {
-  isMoving.value = true;
+  if (touchActive.value) return; // ignore if touch active
+  isOrbiting.value = true;
+  //isMoving.value = true;
   AppStore.highResLoaded = false;
   handlePointerDown(e);
 }
 
 function onPointerMove(e: PointerEvent) {
+  if (touchActive.value) return; // ignore if touch active
+  isOrbiting.value = true;
   handlePointerMove(e);
 
 }
 
 function onPointerUp(e: PointerEvent) {
+  //if (touchActive.value) return; // ignore if touch active
+  isOrbiting.value = false;
   isMoving.value = false;
   handlePointerUp(e);
 }
+
+//handing zoom
+let lastTap = 0;
+
+function onDoubleTap() {
+  scale.value = 1;
+  if (imageCanvas.value) {
+    imageCanvas.value.style.transform = `scale(${scale.value})`;
+  }
+}
+
+const touchActive = ref(false);
+
+function onTouchStart(e: TouchEvent) {
+  if (e.touches.length === 2) {
+    touchActive.value = true;
+    initialDistance = getDistance(e.touches);
+  } else if (e.touches.length === 1) {
+    const now = Date.now();
+    if (now - lastTap < 300) { // 300ms for double tap
+      onDoubleTap();
+    }
+    lastTap = now;
+  }
+}
+
+const MIN_SCALE = 1;
+const MAX_SCALE = 2;
+
+function onTouchMove(e: TouchEvent) {
+  if (e.touches.length === 2) {
+    //if (isOrbiting.value === true) return; // prevent zooming before high res loaded
+    const currentDistance = getDistance(e.touches);
+    const pinchScale = currentDistance / initialDistance;
+    AppStore.highResLoaded = true;
+
+    scale.value *= pinchScale / lastScale;
+    lastScale = pinchScale;
+
+    // clamp
+    scale.value = Math.min(Math.max(scale.value, MIN_SCALE), MAX_SCALE);
+
+    if (imageCanvas.value) {
+      imageCanvas.value.style.transform = `scale(${scale.value})`;
+    }
+
+    e.preventDefault();
+  }
+}
+
+function onTouchEnd(e: TouchEvent) {
+  if (e.touches.length < 2) {
+    lastScale = 1;
+  }
+  if (e.touches.length === 0) {
+    touchActive.value = false;
+  }
+}
+
+function getDistance(touches: TouchList) {
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  return Math.hypot(dx, dy);
+}
+
+
 
 function ChangeImageSequence(path: string, extention: string) {
   console.log("changing to: " + path)
