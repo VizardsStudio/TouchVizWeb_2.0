@@ -1,4 +1,4 @@
-import { MeshBuilder, StandardMaterial, Texture, Vector3, Animation, CubicEase, EasingFunction, type Engine } from "babylonjs";
+import { MeshBuilder, StandardMaterial, Texture, Vector3, Animation, CubicEase, EasingFunction, type Engine, AbstractMesh } from "babylonjs";
 import { LevelBase } from "../core/LevelBase";
 import { MeshActor } from "../actors/MeshActor";
 import { HotspotManager } from "../core/HotspotManager";
@@ -56,6 +56,56 @@ export class Level_InteriorTour extends LevelBase {
         }
         // Set scene background to white (r, g, b, a)
         this.scene.clearColor = new BABYLON.Color4(1, 1, 1, 1);
+
+        //preparing the camera
+        this.camera.lowerRadiusLimit = 0;
+        this.camera.upperRadiusLimit = 0;
+        this.camera.panningDistanceLimit = 0.001;
+
+        // ----------------------------------------------------------
+        // Manual pinch detection using raw touch events
+        // ----------------------------------------------------------
+        const canvas = this.scene.getEngine().getRenderingCanvas();
+        if (canvas) {
+            let lastDistance: number | null = null;
+
+            const minFov = 0.8;
+            const maxFov = 1.9;
+            const pinchSpeed = 0.0025;
+
+            const getDistance = (touch1: Touch, touch2: Touch) => {
+                const dx = touch2.clientX - touch1.clientX;
+                const dy = touch2.clientY - touch1.clientY;
+                return Math.sqrt(dx * dx + dy * dy);
+            };
+
+            canvas.addEventListener("touchmove", (ev) => {
+                if (ev.touches.length === 2) {
+                    ev.preventDefault(); // block scrolling & browser zoom
+                    const d = getDistance(ev.touches[0], ev.touches[1]);
+
+                    if (lastDistance !== null) {
+                        const delta = d - lastDistance;
+
+                        this.camera.fov = BABYLON.Scalar.Clamp(
+                            this.camera.fov - delta * pinchSpeed,
+                            minFov,
+                            maxFov
+                        );
+                    }
+
+                    lastDistance = d;
+                }
+            }, { passive: false });
+
+            canvas.addEventListener("touchend", () => {
+                lastDistance = null;
+            });
+        }
+
+
+
+
     }
 
     public async LoadType(type: string, duplexLevel: number = 1) {
@@ -94,6 +144,21 @@ export class Level_InteriorTour extends LevelBase {
             if (duplexLevel === 2) {
                 firstPano = typeData?.interiorTours?.tours?.find(t => t.isDuplexStartingPoint) || firstPano;
                 console.log("opening level 2 interior tour pano", firstPano);
+                this.hotspotManager.selectedIndex = firstPano?.index || 0;
+                firstIndex = firstPano?.index || 0;
+                const mesh = this.hotspotManager.createdMeshes.find((m: AbstractMesh) => m.metadata?.index === firstIndex);
+
+                // if (mesh && mesh.actionManager) {
+                //     // Loop through all registered actions and execute them manually
+                //     mesh.actionManager.actions.forEach(action => {
+                //         if ('trigger' in action && typeof action['trigger'] === 'function') {
+                //             action['trigger'](mesh); // Babylon will call the action as if clicked
+                //         }
+                //     });
+                // } else {
+                //     console.warn("Mesh or actionManager not found for index", firstIndex);
+                // }
+
             } else {
                 console.log("opening level 1 interior tour pano", firstPano);
             }
