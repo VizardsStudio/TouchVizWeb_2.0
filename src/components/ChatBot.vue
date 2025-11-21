@@ -10,7 +10,7 @@
             <div v-if="isOpen" class="chat-window" :class="windowClass">
                 <!-- Header -->
                 <div class="chat-header">
-                    <h2>AI Assistant</h2>
+                    <h2>{{ $t("AIAssistant") }}</h2>
                     <button class="close-btn" @click="toggleChat">✕</button>
                 </div>
 
@@ -29,8 +29,9 @@
 
                 <!-- Input -->
                 <div class="chat-input">
-                    <input v-model="input" @keyup.enter="send" type="text" placeholder="Type your message..." />
-                    <button @click="send">Send</button>
+                    <input dir="auto" v-model="input" @keyup.enter="send" type="text"
+                        :placeholder="$t('TypeYourMessage')" />
+                    <button @click="send">{{ $t("Send") }}</button>
                 </div>
             </div>
         </transition>
@@ -44,8 +45,12 @@ import { sendMessage } from "../core/ai_api";
 const isOpen = ref(false);
 const input = ref("");
 const messages = ref([
-    { text: "Hello! I'm your personal AI assistant ready to answer your questions about Burj Nawas. How can I help you today?", isUser: false }
+    {
+        text: "Hello! I'm your AI assistant for Burj Nawas. How can I help?\nمرحبا! أنا مساعدك الذكي لبرج نواس. كيف يمكنني المساعدة؟",
+        isUser: false
+    }
 ]);
+
 const loading = ref(false);
 
 const toggleChat = () => (isOpen.value = !isOpen.value);
@@ -209,6 +214,7 @@ async function send() {
     touch-action: none;
     overscroll-behavior: none;
     -webkit-overflow-scrolling: auto;
+    font-weight: bold;
 }
 
 .chat-toggle:hover {
@@ -246,7 +252,7 @@ async function send() {
 /* Mobile layout */
 .chat-window.portrait {
     width: 95%;
-    height: 50%;
+    height: 80%;
     top: 10%;
     left: 50%;
     transform: translateX(-50%);
@@ -295,6 +301,8 @@ async function send() {
     margin-bottom: 8px;
     max-width: 80%;
     word-wrap: break-word;
+    white-space: pre-wrap;
+    direction: auto;
 }
 
 .message.bot {
@@ -316,6 +324,7 @@ async function send() {
     border-top: 1px solid #ddd;
     padding: 8px;
     background-color: white;
+    direction: auto;
 }
 
 .chat-input input {
@@ -384,6 +393,11 @@ async function send() {
 
 .message.typing span:nth-child(3) {
     animation-delay: 0.4s;
+}
+
+.message-text {
+    white-space: pre-wrap;
+    /* preserves \n as line breaks */
 }
 
 @keyframes blink {

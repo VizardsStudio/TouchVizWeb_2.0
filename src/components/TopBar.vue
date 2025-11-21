@@ -6,17 +6,11 @@
     </div>
     <Transition name="fade">
       <div class="time-toggle" v-show="showTime">
-        <div
-          class="toggle-btn"
-          :class="{ active: time === 'day' }"
-          @click="emit('update:time', 'day')"
-        >Day</div>
-        <div
-          class="toggle-btn"
-          :class="{ active: time === 'night' }"
-          @click="emit('update:time', 'night')"
-        >Night</div>
-    </div>
+        <div class="toggle-btn" :class="{ active: time === 'day' }" @click="emit('update:time', 'day')">{{ $t("Day") }}
+        </div>
+        <div class="toggle-btn" :class="{ active: time === 'night' }" @click="emit('update:time', 'night')">{{
+          $t("Night") }}</div>
+      </div>
     </Transition>
   </div>
 </template>

@@ -4,6 +4,7 @@ import { createPinia } from "pinia";
 import "./style.css";
 import { fetchUnits } from "./core/fetchUnits";
 import { unitManager } from "./managers/UnitManager";
+import { i18n } from './i18n';
 
 async function startup() {
   try {
@@ -17,6 +18,7 @@ async function startup() {
   const pinia = createPinia()
   const app = createApp(App)
   app.use(pinia)
+  app.use(i18n)
   app.mount('#app')
 }
 

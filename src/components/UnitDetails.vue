@@ -13,26 +13,34 @@
       </div>
 
       <div class="unit-details-content">
-        <div class="info-row"><span class="label">Area:</span><span class="value">{{ props.apartmentUnit.area }}
+        <div class="info-row"><span class="label">{{ $t("Area") }}</span><span class="value">{{ props.apartmentUnit.area
+        }}
             m²</span></div>
-        <div class="info-row"><span class="label">Floor:</span><span class="value">{{ props.apartmentUnit.floor
+        <div class="info-row"><span class="label">{{ $t("Floor") }}</span><span class="value">{{
+          props.apartmentUnit.floor
         }}</span></div>
-        <div class="info-row"><span class="label">Typology:</span><span class="value">{{ props.apartmentUnit.typology
+        <div class="info-row"><span class="label">{{ $t("Typology") }}</span><span class="value">{{
+          props.apartmentUnit.typology
         }}</span></div>
-        <div class="info-row"><span class="label">View:</span><span class="value">{{ props.apartmentUnit.view }}</span>
+        <div class="info-row"><span class="label">{{ $t("View") }}</span><span class="value">{{ props.apartmentUnit.view
+        }}</span>
         </div>
-        <div class="info-row"><span class="label">Status:</span>
+        <div class="info-row"><span class="label">{{ $t("Status") }}</span>
           <span class="value"
             :class="{ available: props.apartmentUnit.status === 'Available', sold: props.apartmentUnit.status === 'Sold', reserved: props.apartmentUnit.status === 'Reserved' }">{{
               props.apartmentUnit.status }}</span>
         </div>
-        <div class="info-row"><span class="label">Bedrooms:</span><span class="value">{{ props.apartmentUnit.bedrooms
+        <div class="info-row"><span class="label">{{ $t("Bedrooms") }}</span><span class="value">{{
+          props.apartmentUnit.bedrooms
         }}</span></div>
       </div>
       <LvlSelector v-if="props.showLevelSelector" @first-action="onLevelUp" @second-action="onLevelDown" />
       <div class="unit-details-actions">
-        <button class="main-btn" @click="$emit('open-3d')">3D Plans</button>
-        <button class="main-btn" @click="$emit('open-tour')">Interior Tour</button>
+        <button class="main-btn" :disabled="apartmentUnit.area === 0" @click="$emit('open-3d')">{{ $t("Plans3D")
+        }}</button>
+        <button class="main-btn" :disabled="apartmentUnit.area === 0" @click="$emit('open-tour')">{{
+          $t("InteriorTour")
+        }}</button>
       </div>
     </div>
   </div>
@@ -78,6 +86,10 @@ defineExpose({ togglePanel, openPanel, closePanel })
 </script>
 
 <style scoped>
+* {
+  font-family: inherit;
+}
+
 .unit-details {
   position: absolute;
   top: 50%;
@@ -91,6 +103,7 @@ defineExpose({ togglePanel, openPanel, closePanel })
   transition: transform 0.3s ease;
   pointer-events: auto;
   z-index: 20;
+  font-family: inherit;
 }
 
 .unit-details.open {
@@ -202,7 +215,14 @@ defineExpose({ togglePanel, openPanel, closePanel })
   color: #000;
   font-weight: bold;
   cursor: pointer;
+  color: white;
   transition: background 0.2s;
+}
+
+.main-btn:disabled {
+  background: #aaa;
+  color: #3f3f3f;
+  cursor: not-allowed;
 }
 
 .main-btn:hover {

@@ -48,8 +48,49 @@ body,
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: 'Segoe UI', Tahoma, sans-serif;
 }
+
+html[lang="en"] {
+  font-family: 'Futura', 'Avenir', 'Montserrat', sans-serif;
+}
+
+html[lang="ar"] {
+  font-family: 'Cairo', 'Noto Kufi Arabic', 'Almarai', sans-serif;
+}
+
+html[lang="ku"] {
+  font-family: 'Unikurd Web', 'Futura', 'Avenir', 'Montserrat', sans-serif;
+}
+
+html[lang="tr"] {
+  font-family: 'Futura', 'Avenir', 'Montserrat', sans-serif;
+}
+
+
+#app {
+  font-family: inherit;
+}
+
+
+/* Cairo Regular */
+@font-face {
+  font-family: 'Cairo';
+  src: url('../public/assets/fonts/Cairo-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Cairo Bold */
+@font-face {
+  font-family: 'Cairo';
+  src: url('../public/assets/fonts/Cairo-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+
 
 /* canvas {
   top: 0;

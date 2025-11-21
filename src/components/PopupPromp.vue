@@ -1,10 +1,10 @@
 <template>
   <div v-if="visible" class="popup">
     <div class="popup-content">
-      <p>{{ message }}</p>
+      <p dir="auto">{{ message }}</p>
       <div class="popup-actions">
-        <button class="popup-btn" @click="$emit('yes')">Yes</button>
-        <button class="popup-btn" @click="$emit('no')">No</button>
+        <button class="popup-btn" @click="$emit('yes')">{{ $t("Yes") }}</button>
+        <button class="popup-btn" @click="$emit('no')">{{ $t("No") }}</button>
       </div>
     </div>
   </div>

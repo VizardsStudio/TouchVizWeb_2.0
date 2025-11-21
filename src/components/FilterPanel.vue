@@ -2,25 +2,25 @@
   <div class="filter-panel" :class="{ active: filtering }">
     <!-- Floor -->
     <div class="filter-group">
-      <label>Floor</label>
+      <label>{{ $t("Floor") }}</label>
       <VueSlider v-model="floorRange" :min="1" :max="50" range :tooltip="'always'" :dot-size="18" :height="6" />
     </div>
 
     <!-- Area -->
     <div class="filter-group">
-      <label>Area</label>
+      <label>{{ $t("Area") }}</label>
       <VueSlider v-model="areaRange" :min="110" :max="570" range :tooltip="'always'" :dot-size="18" :height="6" />
     </div>
 
     <!-- Bedrooms -->
     <div class="filter-group">
-      <label>Bedrooms</label>
+      <label>{{ $t("Bedrooms") }}</label>
       <VueSlider v-model="bedRange" :min="1" :max="7" range :tooltip="'always'" :dot-size="18" :height="6" />
     </div>
 
     <!-- Typology -->
     <div class="filter-group small-section">
-      <label>Typology</label>
+      <label>{{ $t("Typology") }}</label>
       <div class="toggle-row">
         <button v-for="t in typologies" :key="t" class="toggle" :class="{ active: selectedTypologies.includes(t) }"
           @click="toggleTypology(t)">
@@ -31,7 +31,7 @@
 
     <!-- View -->
     <div class="filter-group small-section">
-      <label>View</label>
+      <label>{{ $t("View") }}</label>
       <div class="toggle-row">
         <button v-for="v in views" :key="v" class="toggle" :class="{ active: selectedViews.includes(v) }"
           @click="toggleView(v)">
@@ -42,7 +42,7 @@
 
     <!-- Reset -->
     <div class="filter-group">
-      <button class="reset-btn" @click="resetAll">Reset</button>
+      <button class="reset-btn" @click="resetAll">{{ $t("Reset") }}</button>
     </div>
   </div>
 </template>

@@ -1,4 +1,5 @@
 <template>
+  <googleTranslate />
   <!-- 3D + Image Canvases -->
   <BabylonViewport v-show="show3dViewport" ref="babylonCanvas" />
   <ImageViewerCanvas v-show="show2dViewport" ref="imageViewerRef" />
@@ -6,8 +7,10 @@
     <PdfViewer pdfUrl="assets/detail.pdf" v-show="showPdf" />
   </Transition>
   <!-- Exit button shown only when an interior tour is active -->
-  <button v-if="showExitBtnTour" @click="ExitInteriorTour" class="exit-tour-btn">Exit Tour</button>
-  <button v-if="showExitBtn3dPlan" @click="exit3DPlans" class="exit-tour-btn">Exit 3D Plan</button>
+  <button v-if="showExitBtnTour" @click="ExitInteriorTour" class="exit-tour-btn">{{
+    $t("ExitTour") }}</button>
+  <button v-if="showExitBtn3dPlan" @click="exit3DPlans" class="exit-tour-btn">{{
+    $t("Exit3dPlan") }}</button>
   <ChatBot />
   <MapViewer v-show="showMap" />
   <!-- UI Components -->
@@ -17,7 +20,8 @@
   <BottomNav ref="bottomNav" :activeTab="activeTab" @update:activeTab="activeTab = $event"
     @toggleFilter="toggleFilter" />
   <Transition name="fade">
-    <PopupPromp :visible="showInitUnit" :message="welcomeMessage" @yes="onConfirm" @no="onCancel" />
+    <PopupPromp :visible="showInitUnit" :message="$t('welcomeMessage', { name: nameParam })" @yes="onConfirm"
+      @no="onCancel" />
   </Transition>
   <!-- Transition overlay (white fade) - keep in DOM and toggle opacity via class for smooth transitions -->
   <div :class="['transition-overlay', { 'is-visible': showTransitionOverlay }]" aria-hidden="true"></div>
@@ -124,13 +128,13 @@ function toggleTime(newTime: 'day' | 'night') {
     imageViewerRef.value?.ChangeImageSequence('assets/Orbits/Exterior/Day', 'webp')
   }
 }
-
+let iDParam = "";
+let nameParam = "";
 function GetUrlQuery() {
   const query = new URLSearchParams(window.location.search)
 
-  // Example: ?tab=filter&unit=A-302
-  const iDParam = query.get('ID')
-  const nameParam = query.get('Name')
+  iDParam = query.get('ID')
+  nameParam = query.get('Name')
 
   if (nameParam) {
     //set the name here
@@ -153,6 +157,10 @@ function onConfirm() {
   activeTab.value = "filter"
   babylonCanvas.value?.OpenExteriorLevel();
   show3dViewport.value = true
+  setTimeout(() => filtering.value = false, 510)
+  setTimeout(() => {
+    eventBus.dispatchEvent(new CustomEvent('unitSelectEvent', { detail: iDParam }));
+  }, 1000);
 }
 
 function onCancel() {
@@ -311,6 +319,19 @@ function HandleTransitionEnd(event: CustomEvent) {
 </script>
 
 <style>
+/* global style.css or in App.vue <style> without scoped */
+body {
+  font-family: inherit;
+  /* choose your font */
+  font-size: 16px;
+  /* optional default font size */
+  line-height: 1.5;
+  /* optional */
+  direction: ltr;
+  /* or rtl if your default language is Arabic/Sorani */
+}
+
+
 #app {
   position: absolute;
   width: 100%;

@@ -59,9 +59,14 @@ export class SelectionManager {
       this._downPointerPos = null;
     };
 
-
-
+    eventBus.addEventListener('unitSelectEvent', (event) => {
+      // `event` is a CustomEvent
+      const num = (event as CustomEvent<number>).detail;
+      console.log('Selecting Unit:', num);
+      this.SelectUnitByID(num);
+    });
   }
+
   DeselectUnit() {
     console.log("deselect");
     eventBus.dispatchEvent(
@@ -69,7 +74,7 @@ export class SelectionManager {
     );
   }
 
-  private SelectUnit(unit: UnitActor) {
+  public SelectUnit(unit: UnitActor) {
     if (this._selectedUnit) {
       this._selectedUnit.SetHighlight(false); // unhighlight previous
     }
@@ -81,4 +86,21 @@ export class SelectionManager {
       new CustomEvent("unitSelected", { detail: this._selectedUnit.props })
     );
   }
+  public SelectUnitByID(unitId: number) {
+    console.log("SelectUnitByID:", unitId);
+    const unit = this.actorManager
+      .GetAllActors()
+      .find(
+        (a) =>
+          a instanceof UnitActor && a.props.id == unitId
+      ) as UnitActor | undefined;
+    if (unit) {
+      this.SelectUnit(unit);
+      console.log("found unit!:", unit);
+    } else {
+      console.warn("unit not found for id:", unitId);
+    }
+  }
+
+
 }

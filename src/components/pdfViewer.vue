@@ -1,18 +1,13 @@
 <template>
   <div class="pdf-viewer">
     <!-- Desktop view -->
-    <iframe
-      v-if="!isMobile && pdfUrl"
-      :src="pdfUrl"
-      class="pdf-frame"
-      frameborder="0"
-    ></iframe>
+    <iframe v-if="!isMobile && pdfUrl" :src="pdfUrl" class="pdf-frame" frameborder="0"></iframe>
 
     <!-- Mobile fallback -->
     <div v-else class="pdf-mobile">
-      <p>PDF preview is not available on mobile.</p>
+      <p>{{ $t("NoMobilePDF") }}</p>
       <button v-if="pdfUrl" class="download-btn" @click="downloadPdf">
-        Open / Download PDF
+        {{ $t("DownloadPDF") }}
       </button>
     </div>
   </div>
@@ -49,8 +44,10 @@ const downloadPdf = () => {
   display: flex;
   position: absolute;
   background-color: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(10px); /* blur the background behind */
-  -webkit-backdrop-filter: blur(10px); /* Safari support */
+  backdrop-filter: blur(10px);
+  /* blur the background behind */
+  -webkit-backdrop-filter: blur(10px);
+  /* Safari support */
   flex-direction: column;
   justify-content: center;
   align-items: center;
